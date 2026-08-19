@@ -17,6 +17,7 @@
       --line-color: #cbd5e1;
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
+      --locked-bg: #f8fafc;
     }
 
     * {
@@ -111,6 +112,40 @@
       outline: none;
     }
 
+    /* 鎖定切換開關樣式 */
+    .lock-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      border: 1.5px solid #cbd5e1;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .lock-control:hover {
+      background: #e2e8f0;
+    }
+
+    .lock-control input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: #dc2626;
+    }
+
+    .lock-control.is-locked {
+      background: #fef2f2;
+      border-color: #f87171;
+      color: #dc2626;
+    }
+
     /* A4 紙張預覽容器 */
     .sheet-wrapper {
       width: 100%;
@@ -129,13 +164,33 @@
       flex-direction: column;
       justify-content: space-between;
       position: relative;
+      transition: all 0.2s ease;
+    }
+
+    /* 鎖定狀態下的提示框 */
+    .lock-banner {
+      display: none;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .locked-active .lock-banner {
+      display: flex;
     }
 
     /* 頁首標題區 */
     .page-header {
       border-bottom: 2px solid #0f172a;
       padding-bottom: 18px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
@@ -185,6 +240,33 @@
       height: 20px;
       outline: none;
       padding: 0 4px;
+    }
+
+    /* 頁面上的鎖定欄位 */
+    .page-lock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .page-lock-badge input {
+      cursor: pointer;
+      accent-color: #dc2626;
+    }
+
+    .page-lock-badge.is-locked {
+      background: #fef2f2;
+      border-color: #f87171;
+      color: #dc2626;
     }
 
     /* 欄位說明標題 */
@@ -432,6 +514,22 @@
       color: #0f172a;
     }
 
+    /* ========================================================
+       🔒 鎖定模式 (Locked Mode) 核心行為與視覺效果
+       ======================================================== */
+    .locked-active [contenteditable="false"] {
+      cursor: default !important;
+      user-select: text;
+    }
+
+    .locked-active .editable-title:hover,
+    .locked-active .meta-line:hover,
+    .locked-active .task-note-input:hover,
+    .locked-active .task-row:hover {
+      background-color: transparent !important;
+      border-color: transparent !important;
+    }
+
     /* 單方格模式切換樣式 */
     .single-box-mode .box-2 {
       display: none !important;
@@ -450,7 +548,7 @@
         padding: 0 !important;
       }
 
-      .toolbar {
+      .toolbar, .lock-banner, .page-lock-badge {
         display: none !important;
       }
 
@@ -503,33 +601,52 @@
       <span>📋</span> 工作清單範本 (一面六條)
     </div>
     <div class="toolbar-actions">
+      <!-- 鎖定控制開關 -->
+      <label class="lock-control" id="toolbarLockLabel">
+        <input type="checkbox" id="toolbarLockCheckbox" onchange="setLockState(this.checked)">
+        <span id="toolbarLockText">🔒 鎖定編輯</span>
+      </label>
+
       <select id="boxModeSelect" class="select-style" onchange="toggleBoxMode(this.value)">
         <option value="double">前方 2 個空白方格</option>
         <option value="single">前方 1 個空白方格</option>
       </select>
-      <button class="btn" onclick="clearAllContent()">🧹 清空內容</button>
+      <button class="btn" id="clearBtn" onclick="clearAllContent()">🧹 清空內容</button>
       <button class="btn btn-primary" onclick="window.print()">🖨️ 列印 / 另存 PDF</button>
     </div>
   </div>
 
   <!-- A4 工作清單範本 (一面六條) -->
   <div class="sheet-wrapper" id="sheetContainer">
-    <div class="page">
+    <div class="page" id="pageSheet">
       
+      <!-- 鎖定提示橫條 -->
+      <div class="lock-banner" id="lockBanner">
+        <span>🔒 頁面已處於「鎖定保護」狀態，無法編輯文字內容（方格仍可勾選進度）。</span>
+        <button class="btn" style="padding: 2px 8px; font-size: 0.75rem;" onclick="setLockState(false)">解除鎖定</button>
+      </div>
+
       <!-- 頁首 -->
       <header class="page-header">
         <div class="header-left">
-          <div class="editable-title" contenteditable="true" spellcheck="false">每日工作清單</div>
+          <div class="editable-title editable-field" contenteditable="true" spellcheck="false">每日工作清單</div>
           <div class="subtitle">ACTION PLAN & TO-DO LIST (6 TASKS)</div>
         </div>
         <div class="header-meta">
           <div class="meta-field">
+            <!-- 頁面內的鎖定欄位 -->
+            <label class="page-lock-badge" id="pageLockBadge" title="勾選後將鎖定全頁文字，防止誤觸修改">
+              <input type="checkbox" id="pageLockCheckbox" onchange="setLockState(this.checked)">
+              <span id="pageLockText">🔒 鎖定清單</span>
+            </label>
+          </div>
+          <div class="meta-field">
             <span>📅 日期 Date：</span>
-            <span class="meta-line" contenteditable="true"></span>
+            <span class="meta-line editable-field" contenteditable="true"></span>
           </div>
           <div class="meta-field">
             <span>🎯 今日重點目標：</span>
-            <span class="meta-line" style="min-width: 160px;" contenteditable="true"></span>
+            <span class="meta-line editable-field" style="min-width: 140px;" contenteditable="true"></span>
           </div>
         </div>
       </header>
@@ -553,11 +670,11 @@
           </div>
           <div class="task-number">01</div>
           <div class="task-content-area">
-            <div class="task-input" contenteditable="true" data-placeholder="第 1 項：待處理事項內容..."></div>
-            <div class="task-subline" contenteditable="true"></div>
+            <div class="task-input editable-field" contenteditable="true" data-placeholder="第 1 項：待處理事項內容..."></div>
+            <div class="task-subline editable-field" contenteditable="true"></div>
           </div>
           <div class="task-tag-area">
-            <div class="task-note-input" contenteditable="true"></div>
+            <div class="task-note-input editable-field" contenteditable="true"></div>
           </div>
         </div>
 
@@ -569,11 +686,11 @@
           </div>
           <div class="task-number">02</div>
           <div class="task-content-area">
-            <div class="task-input" contenteditable="true" data-placeholder="第 2 項：待處理事項內容..."></div>
-            <div class="task-subline" contenteditable="true"></div>
+            <div class="task-input editable-field" contenteditable="true" data-placeholder="第 2 項：待處理事項內容..."></div>
+            <div class="task-subline editable-field" contenteditable="true"></div>
           </div>
           <div class="task-tag-area">
-            <div class="task-note-input" contenteditable="true"></div>
+            <div class="task-note-input editable-field" contenteditable="true"></div>
           </div>
         </div>
 
@@ -585,11 +702,11 @@
           </div>
           <div class="task-number">03</div>
           <div class="task-content-area">
-            <div class="task-input" contenteditable="true" data-placeholder="第 3 項：待處理事項內容..."></div>
-            <div class="task-subline" contenteditable="true"></div>
+            <div class="task-input editable-field" contenteditable="true" data-placeholder="第 3 項：待處理事項內容..."></div>
+            <div class="task-subline editable-field" contenteditable="true"></div>
           </div>
           <div class="task-tag-area">
-            <div class="task-note-input" contenteditable="true"></div>
+            <div class="task-note-input editable-field" contenteditable="true"></div>
           </div>
         </div>
 
@@ -601,11 +718,11 @@
           </div>
           <div class="task-number">04</div>
           <div class="task-content-area">
-            <div class="task-input" contenteditable="true" data-placeholder="第 4 項：待處理事項內容..."></div>
-            <div class="task-subline" contenteditable="true"></div>
+            <div class="task-input editable-field" contenteditable="true" data-placeholder="第 4 項：待處理事項內容..."></div>
+            <div class="task-subline editable-field" contenteditable="true"></div>
           </div>
           <div class="task-tag-area">
-            <div class="task-note-input" contenteditable="true"></div>
+            <div class="task-note-input editable-field" contenteditable="true"></div>
           </div>
         </div>
 
@@ -617,11 +734,11 @@
           </div>
           <div class="task-number">05</div>
           <div class="task-content-area">
-            <div class="task-input" contenteditable="true" data-placeholder="第 5 項：待處理事項內容..."></div>
-            <div class="task-subline" contenteditable="true"></div>
+            <div class="task-input editable-field" contenteditable="true" data-placeholder="第 5 項：待處理事項內容..."></div>
+            <div class="task-subline editable-field" contenteditable="true"></div>
           </div>
           <div class="task-tag-area">
-            <div class="task-note-input" contenteditable="true"></div>
+            <div class="task-note-input editable-field" contenteditable="true"></div>
           </div>
         </div>
 
@@ -633,11 +750,11 @@
           </div>
           <div class="task-number">06</div>
           <div class="task-content-area">
-            <div class="task-input" contenteditable="true" data-placeholder="第 6 項：待處理事項內容..."></div>
-            <div class="task-subline" contenteditable="true"></div>
+            <div class="task-input editable-field" contenteditable="true" data-placeholder="第 6 項：待處理事項內容..."></div>
+            <div class="task-subline editable-field" contenteditable="true"></div>
           </div>
           <div class="task-tag-area">
-            <div class="task-note-input" contenteditable="true"></div>
+            <div class="task-note-input editable-field" contenteditable="true"></div>
           </div>
         </div>
 
@@ -647,7 +764,7 @@
       <footer class="page-footer">
         <div class="memo-block">
           <div class="memo-title">📝 備忘與重要筆記 (Notes & Reminders)</div>
-          <div class="memo-content" contenteditable="true"></div>
+          <div class="memo-content editable-field" contenteditable="true"></div>
         </div>
         <div class="summary-block">
           <div class="summary-item">
@@ -659,8 +776,8 @@
             <span id="completionCounter">0 / 6 完成</span>
           </div>
           <div class="summary-item">
-            <span>簽名 / 備註：</span>
-            <span style="display:inline-block; width:70px; border-bottom:1px solid #94a3b8;" contenteditable="true"></span>
+            <span>簽名 / 覆核：</span>
+            <span class="editable-field" style="display:inline-block; width:70px; border-bottom:1px solid #94a3b8;" contenteditable="true"></span>
           </div>
         </div>
       </footer>
@@ -691,6 +808,41 @@
       }
     }
 
+    // 🔒 鎖定 / 解鎖功能
+    function setLockState(isLocked) {
+      const body = document.body;
+      const editableFields = document.querySelectorAll('.editable-field');
+      const toolbarCheckbox = document.getElementById('toolbarLockCheckbox');
+      const pageCheckbox = document.getElementById('pageLockCheckbox');
+      const toolbarLabel = document.getElementById('toolbarLockLabel');
+      const pageBadge = document.getElementById('pageLockBadge');
+      const toolbarText = document.getElementById('toolbarLockText');
+      const pageText = document.getElementById('pageLockText');
+      const clearBtn = document.getElementById('clearBtn');
+
+      // 同步兩個勾選框狀態
+      if (toolbarCheckbox) toolbarCheckbox.checked = isLocked;
+      if (pageCheckbox) pageCheckbox.checked = isLocked;
+
+      if (isLocked) {
+        body.classList.add('locked-active');
+        editableFields.forEach(el => el.setAttribute('contenteditable', 'false'));
+        if (toolbarLabel) toolbarLabel.classList.add('is-locked');
+        if (pageBadge) pageBadge.classList.add('is-locked');
+        if (toolbarText) toolbarText.textContent = '🔒 已鎖定 (唯讀)';
+        if (pageText) pageText.textContent = '🔒 已鎖定';
+        if (clearBtn) clearBtn.disabled = true;
+      } else {
+        body.classList.remove('locked-active');
+        editableFields.forEach(el => el.setAttribute('contenteditable', 'true'));
+        if (toolbarLabel) toolbarLabel.classList.remove('is-locked');
+        if (pageBadge) pageBadge.classList.remove('is-locked');
+        if (toolbarText) toolbarText.textContent = '🔒 鎖定編輯';
+        if (pageText) pageText.textContent = '🔒 鎖定清單';
+        if (clearBtn) clearBtn.disabled = false;
+      }
+    }
+
     // 切換單 / 雙空白方格模式
     function toggleBoxMode(mode) {
       const container = document.getElementById('sheetContainer');
@@ -703,6 +855,10 @@
 
     // 清空內容
     function clearAllContent() {
+      if (document.body.classList.contains('locked-active')) {
+        alert('目前清單已鎖定，請先解除鎖定後再清空！');
+        return;
+      }
       if (confirm('確定要清空所有填寫的內容與勾選嗎？')) {
         document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, .meta-line').forEach(el => {
           el.textContent = '';
