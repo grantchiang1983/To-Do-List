@@ -235,11 +235,70 @@
 
     .meta-line {
       display: inline-block;
-      min-width: 130px;
+      min-width: 140px;
       border-bottom: 1.5px solid #94a3b8;
-      height: 20px;
+      height: 22px;
       outline: none;
       padding: 0 4px;
+    }
+
+    /* 日期輸入與日曆彈出器組合元件 */
+    .date-picker-wrapper {
+      display: inline-flex;
+      align-items: center;
+      position: relative;
+      border-bottom: 1.5px solid #94a3b8;
+      min-width: 170px;
+      padding-bottom: 2px;
+    }
+
+    .date-text-input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #0f172a;
+      flex: 1;
+      width: 135px;
+      padding: 2px 4px;
+    }
+
+    .date-text-input::placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    .calendar-trigger-btn {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      color: #334155;
+      user-select: none;
+    }
+
+    .calendar-trigger-btn:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+      transform: scale(1.05);
+    }
+
+    .native-date-hidden {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 0;
+      height: 0;
+      opacity: 0;
+      pointer-events: none;
     }
 
     /* 頁面上的鎖定欄位 */
@@ -530,6 +589,15 @@
       border-color: transparent !important;
     }
 
+    .locked-active .date-text-input {
+      pointer-events: none;
+    }
+
+    .locked-active .calendar-trigger-btn {
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
     /* 單方格模式切換樣式 */
     .single-box-mode .box-2 {
       display: none !important;
@@ -548,7 +616,7 @@
         padding: 0 !important;
       }
 
-      .toolbar, .lock-banner, .page-lock-badge {
+      .toolbar, .lock-banner, .page-lock-badge, .calendar-trigger-btn {
         display: none !important;
       }
 
@@ -564,6 +632,14 @@
         width: 100% !important;
         min-height: 100vh !important;
         page-break-after: always;
+      }
+
+      .date-picker-wrapper {
+        border-bottom: 1.5px solid #000000 !important;
+      }
+
+      .date-text-input {
+        color: #000000 !important;
       }
 
       .task-row {
@@ -640,10 +716,19 @@
               <span id="pageLockText">🔒 鎖定清單</span>
             </label>
           </div>
+          
+          <!-- 日期欄位：可直接打字輸入，也可點擊日曆圖示跳出日曆點選 -->
           <div class="meta-field">
             <span>📅 日期 Date：</span>
-            <span class="meta-line editable-field" contenteditable="true"></span>
+            <div class="date-picker-wrapper">
+              <input type="text" id="dateTextInput" class="date-text-input" placeholder="可打字或點日曆" title="可直接鍵盤輸入日期，或點擊右側日曆選取">
+              <button type="button" class="calendar-trigger-btn" id="calendarBtn" title="點擊開啟日曆選擇日期" onclick="openCalendarPicker()">
+                📅
+              </button>
+              <input type="date" id="nativeDatePicker" class="native-date-hidden" onchange="onNativeDatePicked(this.value)">
+            </div>
           </div>
+
           <div class="meta-field">
             <span>🎯 今日重點目標：</span>
             <span class="meta-line editable-field" style="min-width: 140px;" contenteditable="true"></span>
@@ -808,6 +893,35 @@
       }
     }
 
+    // 📅 開啟日曆選取器
+    function openCalendarPicker() {
+      if (document.body.classList.contains('locked-active')) return;
+      const picker = document.getElementById('nativeDatePicker');
+      if (picker) {
+        if (typeof picker.showPicker === 'function') {
+          picker.showPicker();
+        } else {
+          picker.focus();
+          picker.click();
+        }
+      }
+    }
+
+    // 📅 日曆選取後格式化填入輸入框
+    function onNativeDatePicked(val) {
+      if (!val) return;
+      const parts = val.split('-');
+      if (parts.length === 3) {
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+        const weekdayStr = weekdays[d.getDay()];
+        const formatted = `${parts[0]}/${parts[1]}/${parts[2]} (週${weekdayStr})`;
+        document.getElementById('dateTextInput').value = formatted;
+      } else {
+        document.getElementById('dateTextInput').value = val;
+      }
+    }
+
     // 🔒 鎖定 / 解鎖功能
     function setLockState(isLocked) {
       const body = document.body;
@@ -819,6 +933,8 @@
       const toolbarText = document.getElementById('toolbarLockText');
       const pageText = document.getElementById('pageLockText');
       const clearBtn = document.getElementById('clearBtn');
+      const dateTextInput = document.getElementById('dateTextInput');
+      const calendarBtn = document.getElementById('calendarBtn');
 
       // 同步兩個勾選框狀態
       if (toolbarCheckbox) toolbarCheckbox.checked = isLocked;
@@ -827,6 +943,8 @@
       if (isLocked) {
         body.classList.add('locked-active');
         editableFields.forEach(el => el.setAttribute('contenteditable', 'false'));
+        if (dateTextInput) dateTextInput.readOnly = true;
+        if (calendarBtn) calendarBtn.disabled = true;
         if (toolbarLabel) toolbarLabel.classList.add('is-locked');
         if (pageBadge) pageBadge.classList.add('is-locked');
         if (toolbarText) toolbarText.textContent = '🔒 已鎖定 (唯讀)';
@@ -835,6 +953,8 @@
       } else {
         body.classList.remove('locked-active');
         editableFields.forEach(el => el.setAttribute('contenteditable', 'true'));
+        if (dateTextInput) dateTextInput.readOnly = false;
+        if (calendarBtn) calendarBtn.disabled = false;
         if (toolbarLabel) toolbarLabel.classList.remove('is-locked');
         if (pageBadge) pageBadge.classList.remove('is-locked');
         if (toolbarText) toolbarText.textContent = '🔒 鎖定編輯';
@@ -863,6 +983,11 @@
         document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, .meta-line').forEach(el => {
           el.textContent = '';
         });
+        const dateInput = document.getElementById('dateTextInput');
+        const nativePicker = document.getElementById('nativeDatePicker');
+        if (dateInput) dateInput.value = '';
+        if (nativePicker) nativePicker.value = '';
+
         document.querySelectorAll('.square-box').forEach(box => {
           box.classList.remove('checked');
         });
