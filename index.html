@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作清單範本 (一面六條 / 歷史資料庫存檔) - To-Do List</title>
+  <title>工作清單 (一面六條 / 視覺化日曆存檔資料庫) - To-Do List</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -18,7 +18,8 @@
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
       --success: #16a34a;
-      --locked-bg: #f8fafc;
+      --success-bg: #dcfce7;
+      --accent: #f59e0b;
     }
 
     * {
@@ -65,7 +66,7 @@
 
     .save-status-indicator {
       font-size: 0.75rem;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--success);
       background: #f0fdf4;
       padding: 2px 8px;
@@ -89,15 +90,16 @@
       border: 1px solid #cbd5e1;
       background: #ffffff;
       color: #334155;
-      padding: 7px 12px;
+      padding: 7px 13px;
       border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       transition: all 0.15s ease;
+      user-select: none;
     }
 
     .btn:hover {
@@ -116,24 +118,16 @@
       border-color: var(--primary-hover);
     }
 
-    .btn-history {
-      background: #f8fafc;
-      color: #0f172a;
-      border-color: #94a3b8;
-      position: relative;
-    }
-
-    .btn-history:hover {
-      background: #e2e8f0;
-    }
-
-    .history-badge-count {
-      background: #2563eb;
-      color: #ffffff;
-      font-size: 0.7rem;
-      padding: 1px 6px;
-      border-radius: 10px;
+    .btn-calendar-hub {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
       font-weight: 700;
+    }
+
+    .btn-calendar-hub:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
     }
 
     .select-style {
@@ -265,7 +259,7 @@
     .meta-field {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .meta-line {
@@ -277,14 +271,33 @@
       padding: 0 4px;
     }
 
-    /* 日期輸入與日曆彈出器組合元件 */
+    /* 日期輸入與日曆快捷切換組件 */
     .date-picker-wrapper {
       display: inline-flex;
       align-items: center;
       position: relative;
       border-bottom: 1.5px solid #94a3b8;
-      min-width: 170px;
+      min-width: 180px;
       padding-bottom: 2px;
+      gap: 4px;
+    }
+
+    .date-nav-btn {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 2px 4px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .date-nav-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
     }
 
     .date-text-input {
@@ -293,11 +306,12 @@
       background: transparent;
       font-family: inherit;
       font-size: 0.9rem;
-      font-weight: 600;
+      font-weight: 700;
       color: #0f172a;
       flex: 1;
       width: 135px;
       padding: 2px 4px;
+      text-align: center;
     }
 
     .date-text-input::placeholder {
@@ -306,8 +320,8 @@
     }
 
     .calendar-trigger-btn {
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
       border-radius: 6px;
       cursor: pointer;
       font-size: 0.85rem;
@@ -316,24 +330,14 @@
       align-items: center;
       justify-content: center;
       transition: all 0.15s ease;
-      color: #334155;
+      color: #1d4ed8;
       user-select: none;
     }
 
     .calendar-trigger-btn:hover {
-      background: #e2e8f0;
-      border-color: #94a3b8;
+      background: #dbeafe;
+      border-color: #93c5fd;
       transform: scale(1.05);
-    }
-
-    .native-date-hidden {
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      width: 0;
-      height: 0;
-      opacity: 0;
-      pointer-events: none;
     }
 
     /* 欄位說明標題 */
@@ -601,11 +605,6 @@
       pointer-events: none;
     }
 
-    .locked-active .calendar-trigger-btn {
-      pointer-events: none;
-      opacity: 0.4;
-    }
-
     /* 單方格模式切換樣式 */
     .single-box-mode .box-2 {
       display: none !important;
@@ -618,7 +617,7 @@
     }
 
     /* ========================================================
-       📂 歷史存檔資料庫側邊抽屜 (History Modal / Drawer)
+       📅 視覺化日曆存檔資料庫中心 (Visual Calendar Hub Modal)
        ======================================================== */
     .modal-overlay {
       position: fixed;
@@ -626,8 +625,8 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(4px);
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(5px);
       z-index: 999;
       display: none;
       align-items: center;
@@ -639,26 +638,26 @@
       display: flex;
     }
 
-    .modal-dialog {
+    .calendar-modal-card {
       background: #ffffff;
       width: 100%;
-      max-width: 580px;
-      max-height: 85vh;
-      border-radius: 16px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      max-width: 680px;
+      max-height: 90vh;
+      border-radius: 18px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.18);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      animation: modalFadeIn 0.2s ease-out;
+      animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    @keyframes modalFadeIn {
-      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    @keyframes modalPopIn {
+      from { opacity: 0; transform: translateY(16px) scale(0.96); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    .modal-header {
-      padding: 16px 20px;
+    .calendar-modal-header {
+      padding: 16px 22px;
       border-bottom: 1px solid #e2e8f0;
       display: flex;
       justify-content: space-between;
@@ -666,102 +665,196 @@
       background: #f8fafc;
     }
 
-    .modal-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #0f172a;
+    .calendar-nav-controls {
       display: flex;
       align-items: center;
-      gap: 8px;
-    }
-
-    .modal-close-btn {
-      background: none;
-      border: none;
-      font-size: 1.25rem;
-      color: #64748b;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 6px;
-    }
-
-    .modal-close-btn:hover {
-      background: #e2e8f0;
-      color: #0f172a;
-    }
-
-    .modal-body {
-      padding: 16px 20px;
-      overflow-y: auto;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
       gap: 12px;
     }
 
-    .history-card {
-      border: 1px solid #e2e8f0;
+    .calendar-month-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #0f172a;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .cal-btn-icon {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 700;
+      color: #334155;
+      transition: all 0.15s ease;
+    }
+
+    .cal-btn-icon:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+
+    .calendar-modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 星期標題 */
+    .calendar-weekdays-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #64748b;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .calendar-weekdays-grid div:first-child,
+    .calendar-weekdays-grid div:last-child {
+      color: #ef4444; /* 週日與週六強調色 */
+    }
+
+    /* 日期格子網格 */
+    .calendar-days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .calendar-day-cell {
+      min-height: 72px;
+      border: 1.5px solid #e2e8f0;
       border-radius: 10px;
-      padding: 12px 14px;
+      padding: 6px 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #ffffff;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .calendar-day-cell:hover {
+      border-color: var(--primary);
+      background: #f8fafc;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .calendar-day-cell.is-other-month {
+      opacity: 0.35;
+      background: #f8fafc;
+      cursor: default;
+    }
+
+    .calendar-day-cell.is-other-month:hover {
+      transform: none;
+      border-color: #e2e8f0;
+      box-shadow: none;
+    }
+
+    .calendar-day-cell.is-today {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+
+    .calendar-day-cell.is-current-active {
+      outline: 2.5px solid #2563eb;
+      box-shadow: 0 0 0 2px #bfdbfe;
+    }
+
+    .day-cell-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      transition: all 0.15s ease;
-      background: #ffffff;
     }
 
-    .history-card:hover {
-      border-color: #94a3b8;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      background: #f8fafc;
-    }
-
-    .history-info {
-      flex: 1;
-    }
-
-    .history-date {
-      font-size: 0.95rem;
+    .day-number {
+      font-size: 0.9rem;
       font-weight: 700;
-      color: #0f172a;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: #1e293b;
     }
 
-    .history-meta-sub {
-      font-size: 0.8rem;
+    .calendar-day-cell.is-today .day-number {
+      color: #2563eb;
+    }
+
+    .has-archive-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #2563eb;
+    }
+
+    .day-cell-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 4px;
+      border-radius: 4px;
+      text-align: center;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge-done {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge-progress {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    .badge-empty {
+      background: #f1f5f9;
       color: #64748b;
-      margin-top: 4px;
     }
 
-    .history-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .btn-sm {
-      padding: 4px 8px;
-      font-size: 0.8rem;
-      border-radius: 6px;
-    }
-
-    .modal-footer {
-      padding: 12px 20px;
+    /* 日曆底部圖例與匯入匯出 */
+    .calendar-modal-footer {
+      padding: 14px 20px;
       border-top: 1px solid #e2e8f0;
       background: #f8fafc;
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
-    .empty-state {
-      text-align: center;
-      padding: 32px 16px;
-      color: #94a3b8;
+    .calendar-legend-guide {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
     }
 
     /* 列印專用 CSS (@media print) */
@@ -771,7 +864,7 @@
         padding: 0 !important;
       }
 
-      .toolbar, .lock-banner, .calendar-trigger-btn, .modal-overlay {
+      .toolbar, .lock-banner, .calendar-trigger-btn, .date-nav-btn, .modal-overlay {
         display: none !important;
       }
 
@@ -795,6 +888,7 @@
 
       .date-text-input {
         color: #000000 !important;
+        font-weight: 700 !important;
       }
 
       .task-row {
@@ -829,19 +923,19 @@
   <!-- 頂部工具列 -->
   <div class="toolbar">
     <div class="toolbar-title">
-      <span>📋</span> 工作清單範本
+      <span>📋</span> 工作清單
       <span class="save-status-indicator" id="saveIndicator">✓ 已自動儲存</span>
     </div>
     
     <div class="toolbar-actions">
-      <!-- 歷史資料庫管理按鈕 -->
-      <button class="btn btn-history" onclick="openHistoryModal()" title="開啟資料庫歷史存檔列表">
-        📂 歷史存檔 <span class="history-badge-count" id="historyCountBadge">0</span>
+      <!-- 視覺化日曆存檔/讀取總覽 -->
+      <button class="btn btn-calendar-hub" onclick="openCalendarModal()" title="開啟視覺化日曆存檔中心">
+        📅 日曆存檔中心
       </button>
 
-      <!-- 建立/重置新的一天 -->
-      <button class="btn" onclick="createNewDay()" title="建立新的一天工作清單">
-        ➕ 新的一天
+      <!-- 快速切換到今天 -->
+      <button class="btn" onclick="goToToday()" title="回到今天的清單">
+        ☀️ 今天
       </button>
 
       <!-- 鎖定控制開關 -->
@@ -878,15 +972,16 @@
           <div class="subtitle">ACTION PLAN & TO-DO LIST (6 TASKS)</div>
         </div>
         <div class="header-meta">
-          <!-- 日期欄位：支援打字輸入與日曆點選 -->
+          <!-- 日期欄位：含日曆按鈕與前後天快速切換 -->
           <div class="meta-field">
             <span>📅 日期 Date：</span>
             <div class="date-picker-wrapper">
-              <input type="text" id="dateTextInput" class="date-text-input" placeholder="可打字或點日曆" title="可直接鍵盤輸入日期，或點擊右側日曆選取" oninput="triggerAutoSave()">
-              <button type="button" class="calendar-trigger-btn" id="calendarBtn" title="點擊開啟日曆選擇日期" onclick="openCalendarPicker()">
-                📅
+              <button type="button" class="date-nav-btn" title="切換至前一天" onclick="navigateDay(-1)">◀</button>
+              <input type="text" id="dateTextInput" class="date-text-input" placeholder="YYYY/MM/DD" title="點擊日曆圖示開啟日曆" onchange="onDateTextManualChange(this.value)">
+              <button type="button" class="date-nav-btn" title="切換至後一天" onclick="navigateDay(1)">▶</button>
+              <button type="button" class="calendar-trigger-btn" title="開啟日曆存檔中心" onclick="openCalendarModal()">
+                📅 日曆
               </button>
-              <input type="date" id="nativeDatePicker" class="native-date-hidden" onchange="onNativeDatePicked(this.value)">
             </div>
           </div>
 
@@ -1032,49 +1127,88 @@
     </div>
   </div>
 
-  <!-- 📂 歷史資料庫存檔彈出視窗 (Modal) -->
-  <div class="modal-overlay" id="historyModalOverlay" onclick="closeModalOnBg(event)">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span>📂 歷史存檔資料庫</span>
+  <!-- ========================================================
+       📅 視覺化日曆存檔與讀取資料庫彈窗 (Visual Calendar Hub)
+       ======================================================== -->
+  <div class="modal-overlay" id="calendarModalOverlay" onclick="closeCalendarOnBg(event)">
+    <div class="calendar-modal-card">
+      
+      <!-- 日曆頁首導覽 -->
+      <div class="calendar-modal-header">
+        <div class="calendar-nav-controls">
+          <button class="cal-btn-icon" onclick="changeMonth(-1)" title="上個月">◀</button>
+          <div class="calendar-month-title" id="calendarMonthTitle">2026年 8月</div>
+          <button class="cal-btn-icon" onclick="changeMonth(1)" title="下個月">▶</button>
+          <button class="btn btn-sm" onclick="jumpToCalendarToday()" style="padding:4px 10px; font-size:0.8rem;">
+            今天
+          </button>
         </div>
-        <button class="modal-close-btn" onclick="closeHistoryModal()">✕</button>
+        <button class="cal-btn-icon" onclick="closeCalendarModal()" style="border:none; font-size:1.2rem;">✕</button>
       </div>
 
-      <div class="modal-body" id="historyListContainer">
-        <!-- 動態渲染歷史紀錄 -->
+      <!-- 日曆網格主體 -->
+      <div class="calendar-modal-body">
+        <div class="calendar-weekdays-grid">
+          <div>週日</div>
+          <div>週一</div>
+          <div>週二</div>
+          <div>週三</div>
+          <div>週四</div>
+          <div>週五</div>
+          <div>週六</div>
+        </div>
+        <div class="calendar-days-grid" id="calendarDaysGrid">
+          <!-- 動態生成每月天數與存檔進度 -->
+        </div>
       </div>
 
-      <div class="modal-footer">
-        <div style="display:flex; gap:6px;">
-          <button class="btn btn-sm" onclick="exportDatabaseJSON()" title="將所有日期存檔備份下載為 JSON 檔案">
+      <!-- 日曆頁尾圖例與備份功能 -->
+      <div class="calendar-modal-footer">
+        <div class="calendar-legend-guide">
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#dcfce7; border:1px solid #86efac;"></span>
+            <span>已全部完成 (6/6)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#e0f2fe; border:1px solid #7dd3fc;"></span>
+            <span>進行中存檔</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#f1f5f9; border:1px solid #cbd5e1;"></span>
+            <span>無紀錄 / 建立新清單</span>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm" onclick="exportDatabaseJSON()" title="備份所有歷史存檔">
             📤 備份匯出
           </button>
-          <label class="btn btn-sm" style="cursor:pointer;" title="從備份 JSON 檔案還原資料庫">
+          <label class="btn btn-sm" style="cursor:pointer;" title="匯入備份檔案">
             📥 還原匯入
             <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importDatabaseJSON(this)">
           </label>
         </div>
-        <button class="btn btn-sm btn-primary" onclick="closeHistoryModal()">完成</button>
       </div>
+
     </div>
   </div>
 
   <script>
     // ========================================================
-    // 🗄️ 本地資料庫核心 (LocalStorage Database Engine)
+    // 🗄️ 日曆存檔資料庫核心 (Calendar-driven DB Engine)
     // ========================================================
-    const DB_KEY = 'todo_app_daily_database_v1';
+    const DB_KEY = 'todo_app_calendar_db_v2';
+    let currentActiveDateKey = ''; // 格式：'YYYY-MM-DD'
+    let calViewYear = new Date().getFullYear();
+    let calViewMonth = new Date().getMonth(); // 0-indexed
     let saveTimeout = null;
 
-    // 取得資料庫所有存檔
+    // 取得資料庫
     function getDatabase() {
       try {
         const raw = localStorage.getItem(DB_KEY);
         return raw ? JSON.parse(raw) : {};
       } catch (e) {
-        console.error('讀取資料庫失敗', e);
         return {};
       }
     }
@@ -1083,16 +1217,30 @@
     function saveDatabase(db) {
       try {
         localStorage.setItem(DB_KEY, JSON.stringify(db));
-        updateHistoryCountBadge();
       } catch (e) {
-        console.error('寫入資料庫失敗', e);
+        console.error('資料庫儲存失敗', e);
       }
     }
 
-    // 收集當前頁面所有資料為一個資料物件
+    // 格式化日期物件為 'YYYY-MM-DD'
+    function formatDateKey(dateObj) {
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // 格式化顯示字串：'YYYY/MM/DD (週X)'
+    function formatDisplayDate(dateKey) {
+      const parts = dateKey.split('-');
+      if (parts.length !== 3) return dateKey;
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+      return `${parts[0]}/${parts[1]}/${parts[2]} (週${weekdays[d.getDay()]})`;
+    }
+
+    // 取得當前畫面所有內容物件
     function getCurrentSheetData() {
-      const dateText = document.getElementById('dateTextInput').value.trim();
-      const rawDate = document.getElementById('nativeDatePicker').value.trim();
       const title = document.getElementById('pageTitle').textContent.trim();
       const target = document.getElementById('targetGoal').textContent.trim();
       const memo = document.getElementById('memoContent').textContent.trim();
@@ -1109,13 +1257,9 @@
         rows.push({ box1, box2, text, subline, note });
       });
 
-      // 產生記錄鍵值 ID（若無日期則以「未命名_建立時間」）
-      const recordKey = dateText || (rawDate ? rawDate : '未設定日期');
-
       return {
-        key: recordKey,
-        dateText,
-        rawDate,
+        dateKey: currentActiveDateKey,
+        displayDate: formatDisplayDate(currentActiveDateKey),
         title,
         target,
         memo,
@@ -1126,46 +1270,78 @@
       };
     }
 
-    // 將資料物件載入並渲染到畫面上
-    function loadSheetData(data) {
-      if (!data) return;
-
-      document.getElementById('dateTextInput').value = data.dateText || '';
-      document.getElementById('nativeDatePicker').value = data.rawDate || '';
-      document.getElementById('pageTitle').textContent = data.title || '每日工作清單';
-      document.getElementById('targetGoal').textContent = data.target || '';
-      document.getElementById('memoContent').textContent = data.memo || '';
-      document.getElementById('reviewerSign').textContent = data.reviewer || '';
-
-      if (data.boxMode) {
-        document.getElementById('boxModeSelect').value = data.boxMode;
-        toggleBoxMode(data.boxMode);
+    // 載入特定日期的資料（若無存檔則建立空白清單）
+    function switchDate(targetDateKey) {
+      // 先儲存當前正在編輯的日期
+      if (currentActiveDateKey) {
+        saveCurrentActiveDateImmediately();
       }
 
-      if (Array.isArray(data.rows)) {
-        const rowEls = document.querySelectorAll('.task-row');
-        data.rows.forEach((r, idx) => {
-          if (rowEls[idx]) {
-            const b1 = rowEls[idx].querySelector('.box-1');
-            const b2 = rowEls[idx].querySelector('.box-2');
-            const txt = rowEls[idx].querySelector('.task-input');
-            const sub = rowEls[idx].querySelector('.task-subline');
-            const nt = rowEls[idx].querySelector('.task-note-input');
+      currentActiveDateKey = targetDateKey;
+      const db = getDatabase();
+      const existingData = db[targetDateKey];
 
-            if (r.box1) b1.classList.add('checked'); else b1.classList.remove('checked');
-            if (r.box2) b2.classList.add('checked'); else b2.classList.remove('checked');
-            txt.textContent = r.text || '';
-            sub.textContent = r.subline || '';
-            nt.textContent = r.note || '';
-          }
+      // 更新日期輸入框顯示
+      document.getElementById('dateTextInput').value = formatDisplayDate(targetDateKey);
+
+      if (existingData) {
+        // 讀取既有存檔
+        document.getElementById('pageTitle').textContent = existingData.title || '每日工作清單';
+        document.getElementById('targetGoal').textContent = existingData.target || '';
+        document.getElementById('memoContent').textContent = existingData.memo || '';
+        document.getElementById('reviewerSign').textContent = existingData.reviewer || '';
+
+        if (existingData.boxMode) {
+          document.getElementById('boxModeSelect').value = existingData.boxMode;
+          toggleBoxMode(existingData.boxMode, false);
+        }
+
+        const rowEls = document.querySelectorAll('.task-row');
+        if (Array.isArray(existingData.rows)) {
+          existingData.rows.forEach((r, idx) => {
+            if (rowEls[idx]) {
+              const b1 = rowEls[idx].querySelector('.box-1');
+              const b2 = rowEls[idx].querySelector('.box-2');
+              const txt = rowEls[idx].querySelector('.task-input');
+              const sub = rowEls[idx].querySelector('.task-subline');
+              const nt = rowEls[idx].querySelector('.task-note-input');
+
+              if (r.box1) b1.classList.add('checked'); else b1.classList.remove('checked');
+              if (r.box2) b2.classList.add('checked'); else b2.classList.remove('checked');
+              txt.textContent = r.text || '';
+              sub.textContent = r.subline || '';
+              nt.textContent = r.note || '';
+            }
+          });
+        }
+        showSaveIndicator('✓ 已讀取該日存檔');
+      } else {
+        // 全新日期的空白清單
+        document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, #targetGoal, #reviewerSign').forEach(el => {
+          el.textContent = '';
         });
+        document.querySelectorAll('.square-box').forEach(box => {
+          box.classList.remove('checked');
+        });
+        showSaveIndicator('✓ 新日期準備就緒');
       }
 
       updateProgress();
-      showSaveIndicator('✓ 資料已載入');
+      // 記錄最後檢視的日期
+      db['_last_date_key'] = targetDateKey;
+      saveDatabase(db);
     }
 
-    // 自動儲存觸發器（延遲 400ms 避免頻繁寫入）
+    // 立即儲存當前活動日期
+    function saveCurrentActiveDateImmediately() {
+      if (!currentActiveDateKey) return;
+      const data = getCurrentSheetData();
+      const db = getDatabase();
+      db[currentActiveDateKey] = data;
+      saveDatabase(db);
+    }
+
+    // 自動儲存觸發器
     function triggerAutoSave() {
       if (document.body.classList.contains('locked-active')) return;
       const indicator = document.getElementById('saveIndicator');
@@ -1173,13 +1349,7 @@
 
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(() => {
-        const currentData = getCurrentSheetData();
-        const db = getDatabase();
-        // 儲存到對應鍵值
-        db[currentData.key] = currentData;
-        // 同時記錄最後開啟的存檔鍵值
-        db['_last_active_key'] = currentData.key;
-        saveDatabase(db);
+        saveCurrentActiveDateImmediately();
         showSaveIndicator('✓ 已自動儲存');
       }, 400);
     }
@@ -1192,149 +1362,171 @@
       }
     }
 
-    // 更新歷史存檔數量標籤
-    function updateHistoryCountBadge() {
-      const db = getDatabase();
-      const keys = Object.keys(db).filter(k => k !== '_last_active_key');
-      const badge = document.getElementById('historyCountBadge');
-      if (badge) badge.textContent = keys.length;
+    // 前一天 / 後一天 切換
+    function navigateDay(offset) {
+      if (!currentActiveDateKey) return;
+      const parts = currentActiveDateKey.split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      d.setDate(d.getDate() + offset);
+      const newKey = formatDateKey(d);
+      switchDate(newKey);
     }
 
-    // 建立新的一天
-    function createNewDay() {
-      if (confirm('確定要建立「新的一天」清單嗎？（目前的內容已自動保存在資料庫中）')) {
-        // 清空畫面
-        document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, .meta-line').forEach(el => {
-          el.textContent = '';
-        });
-        document.querySelectorAll('.square-box').forEach(box => {
-          box.classList.remove('checked');
-        });
+    // 回到今天
+    function goToToday() {
+      const todayKey = formatDateKey(new Date());
+      switchDate(todayKey);
+    }
 
-        // 設定今天日期
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-        const weekdayStr = weekdays[today.getDay()];
-        
-        document.getElementById('nativeDatePicker').value = `${yyyy}-${mm}-${dd}`;
-        document.getElementById('dateTextInput').value = `${yyyy}/${mm}/${dd} (週${weekdayStr})`;
-
-        updateProgress();
-        triggerAutoSave();
+    // 手動修改文字日期
+    function onDateTextManualChange(val) {
+      const clean = val.replace(/\//g, '-').replace(/\(.*\)/, '').trim();
+      const matched = clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (matched) {
+        const y = matched[1];
+        const m = String(matched[2]).padStart(2, '0');
+        const d = String(matched[3]).padStart(2, '0');
+        switchDate(`${y}-${m}-${d}`);
+      } else {
+        document.getElementById('dateTextInput').value = formatDisplayDate(currentActiveDateKey);
       }
     }
 
     // ========================================================
-    // 📂 歷史存檔視窗 UI 與操作
+    // 📅 視覺化日曆視窗渲染與操作 (Visual Calendar UI)
     // ========================================================
-    function openHistoryModal() {
-      renderHistoryList();
-      document.getElementById('historyModalOverlay').classList.add('show');
+    function openCalendarModal() {
+      // 將日曆檢視月份設定為目前選定日期的月份
+      if (currentActiveDateKey) {
+        const parts = currentActiveDateKey.split('-');
+        calViewYear = Number(parts[0]);
+        calViewMonth = Number(parts[1]) - 1;
+      }
+      renderCalendar();
+      document.getElementById('calendarModalOverlay').classList.add('show');
     }
 
-    function closeHistoryModal() {
-      document.getElementById('historyModalOverlay').classList.remove('show');
+    function closeCalendarModal() {
+      document.getElementById('calendarModalOverlay').classList.remove('show');
     }
 
-    function closeModalOnBg(e) {
-      if (e.target.id === 'historyModalOverlay') {
-        closeHistoryModal();
+    function closeCalendarOnBg(e) {
+      if (e.target.id === 'calendarModalOverlay') {
+        closeCalendarModal();
       }
     }
 
-    function renderHistoryList() {
-      const container = document.getElementById('historyListContainer');
+    function changeMonth(offset) {
+      calViewMonth += offset;
+      if (calViewMonth < 0) {
+        calViewMonth = 11;
+        calViewYear--;
+      } else if (calViewMonth > 11) {
+        calViewMonth = 0;
+        calViewYear++;
+      }
+      renderCalendar();
+    }
+
+    function jumpToCalendarToday() {
+      const today = new Date();
+      calViewYear = today.getFullYear();
+      calViewMonth = today.getMonth();
+      renderCalendar();
+    }
+
+    // 渲染整個月份日曆格子
+    function renderCalendar() {
+      const titleEl = document.getElementById('calendarMonthTitle');
+      titleEl.textContent = `${calViewYear} 年 ${calViewMonth + 1} 月`;
+
+      const gridEl = document.getElementById('calendarDaysGrid');
+      gridEl.innerHTML = '';
+
       const db = getDatabase();
-      const keys = Object.keys(db).filter(k => k !== '_last_active_key');
+      const todayKey = formatDateKey(new Date());
 
-      if (keys.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div style="font-size:2rem; margin-bottom:8px;">📭</div>
-            <div>目前資料庫尚無任何存檔</div>
-            <div style="font-size:0.8rem; margin-top:4px;">在頁面上輸入內容或日期即會自動為您保存！</div>
-          </div>
-        `;
-        return;
+      // 當月第一天與最後一天
+      const firstDay = new Date(calViewYear, calViewMonth, 1);
+      const lastDay = new Date(calViewYear, calViewMonth + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const startDayOfWeek = firstDay.getDay(); // 0 (Sun) to 6 (Sat)
+
+      // 上個月的補齊天數
+      const prevMonthLastDay = new Date(calViewYear, calViewMonth, 0).getDate();
+      for (let i = startDayOfWeek - 1; i >= 0; i--) {
+        const d = prevMonthLastDay - i;
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell is-other-month';
+        cell.innerHTML = `<div class="day-number">${d}</div>`;
+        gridEl.appendChild(cell);
       }
 
-      // 依最後更新時間排序（最新的在最前）
-      keys.sort((a, b) => (db[b].updatedAt || 0) - (db[a].updatedAt || 0));
+      // 當月的所有天數
+      for (let day = 1; day <= daysInMonth; day++) {
+        const mm = String(calViewMonth + 1).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        const dateKey = `${calViewYear}-${mm}-${dd}`;
 
-      let html = '';
-      keys.forEach(k => {
-        const item = db[k];
-        let completed = 0;
-        if (Array.isArray(item.rows)) {
-          completed = item.rows.filter(r => r.box1 || r.box2).length;
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell';
+
+        if (dateKey === todayKey) cell.classList.add('is-today');
+        if (dateKey === currentActiveDateKey) cell.classList.add('is-current-active');
+
+        // 檢查是否有存檔
+        const record = db[dateKey];
+        let badgeHtml = '';
+        let dotHtml = '';
+
+        if (record && Array.isArray(record.rows)) {
+          const completed = record.rows.filter(r => r.box1 || r.box2).length;
+          const hasContent = record.rows.some(r => r.text) || record.target;
+
+          if (hasContent || completed > 0) {
+            dotHtml = `<span class="has-archive-dot"></span>`;
+            if (completed === 6) {
+              badgeHtml = `<div class="day-cell-badge badge-done">6/6 ✓</div>`;
+            } else if (completed > 0) {
+              badgeHtml = `<div class="day-cell-badge badge-progress">${completed}/6 完成</div>`;
+            } else {
+              badgeHtml = `<div class="day-cell-badge badge-empty">進行中</div>`;
+            }
+          }
         }
-        const timeStr = item.updatedAt ? new Date(item.updatedAt).toLocaleString('zh-TW', { hour12: false }) : '';
 
-        html += `
-          <div class="history-card">
-            <div class="history-info">
-              <div class="history-date">
-                📅 ${item.dateText || item.key}
-                <span style="font-size:0.75rem; font-weight:600; padding:1px 6px; border-radius:4px; background:${completed === 6 ? '#dcfce7; color:#15803d;' : '#f1f5f9; color:#475569;'}">
-                  ${completed} / 6 完成
-                </span>
-              </div>
-              <div class="history-meta-sub">
-                🎯 重點：${item.target || '(未設定目標)'} · 🕒 儲存時間：${timeStr}
-              </div>
-            </div>
-            <div class="history-actions">
-              <button class="btn btn-sm btn-primary" onclick="loadHistoryItem('${encodeURIComponent(k)}')">
-                讀取
-              </button>
-              <button class="btn btn-sm" style="color:#dc2626;" onclick="deleteHistoryItem('${encodeURIComponent(k)}')">
-                🗑️
-              </button>
-            </div>
+        cell.innerHTML = `
+          <div class="day-cell-top">
+            <span class="day-number">${day}</span>
+            ${dotHtml}
           </div>
+          ${badgeHtml}
         `;
-      });
 
-      container.innerHTML = html;
-    }
+        // 點選該天立即讀取該日清單
+        cell.onclick = () => {
+          switchDate(dateKey);
+          closeCalendarModal();
+        };
 
-    // 讀取特定歷史檔案
-    function loadHistoryItem(encodedKey) {
-      const key = decodeURIComponent(encodedKey);
-      const db = getDatabase();
-      if (db[key]) {
-        loadSheetData(db[key]);
-        closeHistoryModal();
+        gridEl.appendChild(cell);
       }
     }
 
-    // 刪除特定歷史檔案
-    function deleteHistoryItem(encodedKey) {
-      const key = decodeURIComponent(encodedKey);
-      if (confirm(`確定要刪除「${key}」這筆存檔紀錄嗎？`)) {
-        const db = getDatabase();
-        delete db[key];
-        saveDatabase(db);
-        renderHistoryList();
-      }
-    }
-
-    // 📤 匯出資料庫為 JSON 檔案
+    // ========================================================
+    // 📤 備份匯出與匯入功能
+    // ========================================================
     function exportDatabaseJSON() {
       const db = getDatabase();
       const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `工作清單備份_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `工作清單日曆資料庫備份_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    // 📥 匯入 JSON 檔案還原資料庫
     function importDatabaseJSON(input) {
       const file = input.files[0];
       if (!file) return;
@@ -1347,8 +1539,11 @@
             const currentDb = getDatabase();
             const merged = { ...currentDb, ...imported };
             saveDatabase(merged);
-            renderHistoryList();
-            alert('🎉 備份存檔還原成功！');
+            renderCalendar();
+            alert('🎉 日曆資料庫還原成功！');
+            if (currentActiveDateKey) {
+              switchDate(currentActiveDateKey);
+            }
           } else {
             alert('檔案格式錯誤，請選擇正確的 JSON 備份檔！');
           }
@@ -1361,7 +1556,7 @@
     }
 
     // ========================================================
-    // 互動控制邏輯 (打勾、進度、日曆、鎖定等)
+    // 互動控制邏輯 (打勾、進度、鎖定、清空等)
     // ========================================================
 
     // 點選打勾切換
@@ -1387,45 +1582,6 @@
       }
     }
 
-    // 📅 開啟日曆選取器
-    function openCalendarPicker() {
-      if (document.body.classList.contains('locked-active')) return;
-      const picker = document.getElementById('nativeDatePicker');
-      if (picker) {
-        if (typeof picker.showPicker === 'function') {
-          picker.showPicker();
-        } else {
-          picker.focus();
-          picker.click();
-        }
-      }
-    }
-
-    // 📅 日曆選取後格式化填入輸入框，並檢查該日期是否已有存檔
-    function onNativeDatePicked(val) {
-      if (!val) return;
-      const parts = val.split('-');
-      if (parts.length === 3) {
-        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-        const weekdayStr = weekdays[d.getDay()];
-        const formatted = `${parts[0]}/${parts[1]}/${parts[2]} (週${weekdayStr})`;
-        document.getElementById('dateTextInput').value = formatted;
-
-        // 檢查資料庫是否有該日期的存檔
-        const db = getDatabase();
-        if (db[formatted]) {
-          if (confirm(`找到「${formatted}」已有的存檔，是否直接載入？`)) {
-            loadSheetData(db[formatted]);
-            return;
-          }
-        }
-      } else {
-        document.getElementById('dateTextInput').value = val;
-      }
-      triggerAutoSave();
-    }
-
     // 🔒 鎖定 / 解鎖功能
     function setLockState(isLocked) {
       const body = document.body;
@@ -1435,7 +1591,6 @@
       const toolbarText = document.getElementById('toolbarLockText');
       const clearBtn = document.getElementById('clearBtn');
       const dateTextInput = document.getElementById('dateTextInput');
-      const calendarBtn = document.getElementById('calendarBtn');
 
       if (toolbarCheckbox) toolbarCheckbox.checked = isLocked;
 
@@ -1443,7 +1598,6 @@
         body.classList.add('locked-active');
         editableFields.forEach(el => el.setAttribute('contenteditable', 'false'));
         if (dateTextInput) dateTextInput.readOnly = true;
-        if (calendarBtn) calendarBtn.disabled = true;
         if (toolbarLabel) toolbarLabel.classList.add('is-locked');
         if (toolbarText) toolbarText.textContent = '🔒 已鎖定';
         if (clearBtn) clearBtn.disabled = true;
@@ -1451,7 +1605,6 @@
         body.classList.remove('locked-active');
         editableFields.forEach(el => el.setAttribute('contenteditable', 'true'));
         if (dateTextInput) dateTextInput.readOnly = false;
-        if (calendarBtn) calendarBtn.disabled = false;
         if (toolbarLabel) toolbarLabel.classList.remove('is-locked');
         if (toolbarText) toolbarText.textContent = '🔒 鎖定';
         if (clearBtn) clearBtn.disabled = false;
@@ -1459,14 +1612,14 @@
     }
 
     // 切換單 / 雙空白方格模式
-    function toggleBoxMode(mode) {
+    function toggleBoxMode(mode, triggerSave = true) {
       const container = document.getElementById('sheetContainer');
       if (mode === 'single') {
         container.classList.add('single-box-mode');
       } else {
         container.classList.remove('single-box-mode');
       }
-      triggerAutoSave();
+      if (triggerSave) triggerAutoSave();
     }
 
     // 清空內容
@@ -1475,15 +1628,10 @@
         alert('目前清單已鎖定，請先解除鎖定後再清空！');
         return;
       }
-      if (confirm('確定要清空所有填寫的內容與勾選嗎？')) {
-        document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, .meta-line').forEach(el => {
+      if (confirm('確定要清空當天所有填寫的內容與勾選嗎？')) {
+        document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, #targetGoal, #reviewerSign').forEach(el => {
           el.textContent = '';
         });
-        const dateInput = document.getElementById('dateTextInput');
-        const nativePicker = document.getElementById('nativeDatePicker');
-        if (dateInput) dateInput.value = '';
-        if (nativePicker) nativePicker.value = '';
-
         document.querySelectorAll('.square-box').forEach(box => {
           box.classList.remove('checked');
         });
@@ -1492,33 +1640,20 @@
       }
     }
 
-    // 監聽所有可編輯欄位的輸入，即時自動儲存
+    // 監聽所有輸入，即時自動儲存到當日資料庫
     document.addEventListener('input', function(e) {
-      if (e.target.classList.contains('editable-field') || e.target.classList.contains('date-text-input')) {
+      if (e.target.classList.contains('editable-field')) {
         triggerAutoSave();
       }
     });
 
-    // 頁面初始化：載入最後一次的活動存檔，或建立今天預設
+    // 頁面初始化
     window.addEventListener('DOMContentLoaded', () => {
-      updateHistoryCountBadge();
       const db = getDatabase();
-      const lastKey = db['_last_active_key'];
-      if (lastKey && db[lastKey]) {
-        loadSheetData(db[lastKey]);
-      } else {
-        // 設定今天日期
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-        const weekdayStr = weekdays[today.getDay()];
-        
-        document.getElementById('nativeDatePicker').value = `${yyyy}-${mm}-${dd}`;
-        document.getElementById('dateTextInput').value = `${yyyy}/${mm}/${dd} (週${weekdayStr})`;
-        triggerAutoSave();
-      }
+      const lastKey = db['_last_date_key'];
+      const todayKey = formatDateKey(new Date());
+      // 優先載入今天或上次開啟的日期
+      switchDate(lastKey || todayKey);
     });
   </script>
 </body>
