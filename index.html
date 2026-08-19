@@ -3,24 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作清單 (一面六條 / Firebase 雲端即時同步) - To-Do List</title>
+  <title>工作清單 (一面六條 / 灰階極簡風 / Firebase 雲端同步) - To-Do List</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-canvas: #f1f5f9;
+      --bg-canvas: #f4f4f5;
       --paper-bg: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border-color: #cbd5e1;
-      --line-color: #cbd5e1;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --success: #16a34a;
-      --success-bg: #dcfce7;
-      --accent: #f59e0b;
-      --cloud: #0284c7;
+      --text-main: #09090b;
+      --text-muted: #71717a;
+      --border-color: #e4e4e7;
+      --line-color: #e4e4e7;
+      --primary: #18181b;
+      --primary-hover: #27272a;
+      --secondary-bg: #f4f4f5;
+      --secondary-border: #d4d4d8;
     }
 
     * {
@@ -33,21 +31,22 @@
       font-family: 'Plus Jakarta Sans', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-canvas);
       color: var(--text-main);
-      padding: 20px 16px 48px;
+      padding: 24px 16px 48px;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
     }
 
-    /* 頂部操作工具列 (列印時隱藏) */
+    /* 頂部操作工具列 (灰階極簡風) */
     .toolbar {
       width: 100%;
       max-width: 860px;
       background: #ffffff;
       padding: 12px 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
@@ -59,7 +58,7 @@
     .toolbar-title {
       font-size: 1rem;
       font-weight: 700;
-      color: #0f172a;
+      color: var(--text-main);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -68,15 +67,24 @@
     .save-status-indicator {
       font-size: 0.75rem;
       font-weight: 600;
-      color: var(--success);
-      background: #f0fdf4;
+      color: #52525b;
+      background: #f4f4f5;
       padding: 3px 9px;
       border-radius: 12px;
-      border: 1px solid #bbf7d0;
+      border: 1px solid #e4e4e7;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       transition: all 0.3s ease;
+    }
+
+    .save-status-indicator::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #71717a;
     }
 
     .toolbar-actions {
@@ -88,9 +96,9 @@
 
     .btn {
       appearance: none;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--secondary-border);
       background: #ffffff;
-      color: #334155;
+      color: var(--text-main);
       padding: 7px 13px;
       border-radius: 8px;
       font-size: 0.85rem;
@@ -104,8 +112,8 @@
     }
 
     .btn:hover {
-      background: #f8fafc;
-      border-color: #94a3b8;
+      background: #f4f4f5;
+      border-color: #a1a1aa;
     }
 
     .btn-primary {
@@ -120,72 +128,77 @@
     }
 
     .btn-calendar-hub {
-      background: #eff6ff;
-      color: #1d4ed8;
-      border-color: #bfdbfe;
+      background: #f4f4f5;
+      color: var(--text-main);
+      border-color: #d4d4d8;
       font-weight: 700;
     }
 
     .btn-calendar-hub:hover {
-      background: #dbeafe;
-      border-color: #93c5fd;
+      background: #e4e4e7;
+      border-color: #a1a1aa;
     }
 
     .btn-copy-date {
-      background: #fdf4ff;
-      color: #a21caf;
-      border-color: #f0abfc;
+      background: #f4f4f5;
+      color: var(--text-main);
+      border-color: #d4d4d8;
       font-weight: 700;
     }
 
     .btn-copy-date:hover {
-      background: #fae8ff;
-      border-color: #e879f9;
+      background: #e4e4e7;
+      border-color: #a1a1aa;
     }
 
     .select-style {
       padding: 7px 10px;
       border-radius: 8px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--secondary-border);
       font-size: 0.85rem;
-      color: #334155;
+      font-weight: 500;
+      color: var(--text-main);
       background-color: #fff;
       cursor: pointer;
       outline: none;
     }
 
-    /* 鎖定切換開關樣式 */
+    .select-style:hover {
+      border-color: #a1a1aa;
+    }
+
+    /* 鎖定切換開關樣式 (灰階) */
     .lock-control {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       padding: 6px 10px;
       border-radius: 8px;
-      background: #f1f5f9;
-      border: 1.5px solid #cbd5e1;
+      background: #f4f4f5;
+      border: 1px solid var(--secondary-border);
       font-size: 0.85rem;
       font-weight: 600;
-      color: #334155;
+      color: var(--text-main);
       cursor: pointer;
       user-select: none;
       transition: all 0.2s ease;
     }
 
     .lock-control:hover {
-      background: #e2e8f0;
+      background: #e4e4e7;
     }
 
     .lock-control input[type="checkbox"] {
       cursor: pointer;
       width: 15px;
       height: 15px;
-      accent-color: #dc2626;
+      accent-color: #18181b;
     }
 
     .lock-control.is-locked {
-      background: #fef2f2;
-      border-color: #f87171;
-      color: #dc2626;
+      background: #18181b;
+      border-color: #18181b;
+      color: #ffffff;
     }
 
     /* A4 紙張預覽容器 */
@@ -200,8 +213,9 @@
       aspect-ratio: 1 / 1.414; /* A4 比例 */
       min-height: 1020px;
       padding: 48px 44px;
-      border-radius: 6px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -209,12 +223,12 @@
       transition: all 0.2s ease;
     }
 
-    /* 鎖定狀態下的提示框 */
+    /* 鎖定狀態提示橫條 (灰階) */
     .lock-banner {
       display: none;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #991b1b;
+      background: #f4f4f5;
+      border: 1px solid #d4d4d8;
+      color: #27272a;
       padding: 8px 14px;
       border-radius: 6px;
       font-size: 0.85rem;
@@ -228,9 +242,9 @@
       display: flex;
     }
 
-    /* 頁首標題區 */
+    /* 頁首標題區 (灰階極簡) */
     .page-header {
-      border-bottom: 2px solid #0f172a;
+      border-bottom: 2px solid var(--text-main);
       padding-bottom: 18px;
       margin-bottom: 18px;
       display: flex;
@@ -245,7 +259,7 @@
     .editable-title {
       font-size: 1.75rem;
       font-weight: 800;
-      color: #0f172a;
+      color: var(--text-main);
       letter-spacing: -0.02em;
       outline: none;
       padding: 2px 4px;
@@ -254,10 +268,12 @@
     }
 
     .subtitle {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: var(--text-muted);
       margin-top: 4px;
       padding-left: 4px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
     }
 
     .header-meta {
@@ -266,7 +282,7 @@
       align-items: flex-end;
       gap: 10px;
       font-size: 0.9rem;
-      color: #475569;
+      color: #3f3f46;
     }
 
     .meta-field {
@@ -278,7 +294,7 @@
     .meta-line {
       display: inline-block;
       min-width: 140px;
-      border-bottom: 1.5px solid #94a3b8;
+      border-bottom: 1.5px solid #71717a;
       height: 22px;
       outline: none;
       padding: 0 4px;
@@ -289,7 +305,7 @@
       display: inline-flex;
       align-items: center;
       position: relative;
-      border-bottom: 1.5px solid #94a3b8;
+      border-bottom: 1.5px solid #71717a;
       min-width: 180px;
       padding-bottom: 2px;
       gap: 4px;
@@ -298,7 +314,7 @@
     .date-nav-btn {
       background: transparent;
       border: none;
-      color: #64748b;
+      color: var(--text-muted);
       cursor: pointer;
       font-size: 0.8rem;
       padding: 2px 4px;
@@ -309,8 +325,8 @@
     }
 
     .date-nav-btn:hover {
-      background: #e2e8f0;
-      color: #0f172a;
+      background: #e4e4e7;
+      color: var(--text-main);
     }
 
     .date-text-input {
@@ -320,7 +336,7 @@
       font-family: inherit;
       font-size: 0.9rem;
       font-weight: 700;
-      color: #0f172a;
+      color: var(--text-main);
       flex: 1;
       width: 135px;
       padding: 2px 4px;
@@ -328,13 +344,13 @@
     }
 
     .date-text-input::placeholder {
-      color: #94a3b8;
+      color: #a1a1aa;
       font-weight: 400;
     }
 
     .calendar-trigger-btn {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
+      background: #f4f4f5;
+      border: 1px solid var(--secondary-border);
       border-radius: 6px;
       cursor: pointer;
       font-size: 0.85rem;
@@ -343,26 +359,25 @@
       align-items: center;
       justify-content: center;
       transition: all 0.15s ease;
-      color: #1d4ed8;
+      color: var(--text-main);
       user-select: none;
     }
 
     .calendar-trigger-btn:hover {
-      background: #dbeafe;
-      border-color: #93c5fd;
-      transform: scale(1.05);
+      background: #e4e4e7;
+      border-color: #a1a1aa;
     }
 
-    /* 欄位說明標題 */
+    /* 欄位說明標題 (灰階) */
     .table-legend {
       display: flex;
       align-items: center;
       padding: 0 8px 10px 8px;
       font-size: 0.85rem;
       font-weight: 700;
-      color: #64748b;
+      color: var(--text-muted);
       letter-spacing: 0.02em;
-      border-bottom: 1.5px solid #e2e8f0;
+      border-bottom: 1.5px solid var(--line-color);
     }
 
     .legend-boxes {
@@ -412,10 +427,10 @@
     }
 
     .task-row:hover {
-      background: #f8fafc;
+      background: #fafafa;
     }
 
-    /* 最前方空白方格 */
+    /* 最前方空白方格 (灰階) */
     .checkbox-container {
       display: flex;
       align-items: center;
@@ -427,7 +442,7 @@
     .square-box {
       width: 26px;
       height: 26px;
-      border: 2px solid #334155;
+      border: 2px solid #27272a;
       border-radius: 6px;
       background: #ffffff;
       cursor: pointer;
@@ -440,13 +455,13 @@
     }
 
     .square-box:hover {
-      border-color: var(--primary);
-      transform: scale(1.08);
+      border-color: #09090b;
+      transform: scale(1.06);
     }
 
     .square-box.checked {
-      background: #0f172a;
-      border-color: #0f172a;
+      background: #18181b;
+      border-color: #18181b;
     }
 
     .square-box.checked::after {
@@ -462,7 +477,7 @@
       flex-shrink: 0;
       font-size: 1rem;
       font-weight: 700;
-      color: #64748b;
+      color: var(--text-muted);
       text-align: center;
     }
 
@@ -478,7 +493,7 @@
     .task-input {
       width: 100%;
       font-size: 1.1rem;
-      color: #0f172a;
+      color: var(--text-main);
       font-weight: 500;
       line-height: 1.5;
       outline: none;
@@ -489,13 +504,13 @@
 
     .task-input:empty::before {
       content: attr(data-placeholder);
-      color: #94a3b8;
+      color: #a1a1aa;
       font-weight: 400;
     }
 
     .task-subline {
       font-size: 0.85rem;
-      color: #64748b;
+      color: var(--text-muted);
       margin-top: 4px;
       outline: none;
       min-height: 18px;
@@ -503,7 +518,7 @@
 
     .task-subline:empty::before {
       content: "補充說明 / 細項筆記...";
-      color: #cbd5e1;
+      color: #d4d4d8;
     }
 
     /* 右側備註/時間欄 */
@@ -517,7 +532,7 @@
 
     .task-note-input {
       font-size: 0.85rem;
-      color: #64748b;
+      color: var(--text-muted);
       text-align: right;
       width: 100%;
       outline: none;
@@ -527,18 +542,18 @@
     }
 
     .task-note-input:hover, .task-note-input:focus {
-      border-color: #cbd5e1;
-      background: #ffffff;
+      border-color: #d4d4d8;
+      background: #fafafa;
     }
 
     .task-note-input:empty::before {
       content: "時間 / 備註";
-      color: #cbd5e1;
+      color: #d4d4d8;
     }
 
-    /* 頁尾備忘與總結區 */
+    /* 頁尾備忘與總結區 (灰階) */
     .page-footer {
-      border-top: 1.5px solid #cbd5e1;
+      border-top: 1.5px solid var(--border-color);
       padding-top: 16px;
       margin-top: 12px;
       display: grid;
@@ -547,8 +562,8 @@
     }
 
     .memo-block {
-      background: #f8fafc;
-      border: 1px dashed #cbd5e1;
+      background: #fafafa;
+      border: 1px dashed #d4d4d8;
       border-radius: 8px;
       padding: 12px 16px;
       min-height: 85px;
@@ -557,7 +572,7 @@
     .memo-title {
       font-size: 0.8rem;
       font-weight: 700;
-      color: #475569;
+      color: #3f3f46;
       margin-bottom: 6px;
       display: flex;
       align-items: center;
@@ -566,7 +581,7 @@
 
     .memo-content {
       font-size: 0.875rem;
-      color: #334155;
+      color: #27272a;
       outline: none;
       line-height: 1.5;
       min-height: 42px;
@@ -574,11 +589,12 @@
 
     .memo-content:empty::before {
       content: "今日心得、重點提醒或明日備忘事項...";
-      color: #94a3b8;
+      color: #a1a1aa;
     }
 
     .summary-block {
-      background: #f8fafc;
+      background: #fafafa;
+      border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 12px 16px;
       display: flex;
@@ -591,16 +607,14 @@
       display: flex;
       justify-content: space-between;
       font-size: 0.85rem;
-      color: #475569;
+      color: #52525b;
     }
 
     .summary-item strong {
-      color: #0f172a;
+      color: var(--text-main);
     }
 
-    /* ========================================================
-       🔒 鎖定模式 (Locked Mode)
-       ======================================================== */
+    /* 鎖定模式 */
     .locked-active [contenteditable="false"] {
       cursor: default !important;
       user-select: text;
@@ -629,15 +643,15 @@
       width: 38px !important;
     }
 
-    /* 模態視窗與卡片通用樣式 */
+    /* 模態視窗與卡片通用樣式 (灰階極簡) */
     .modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(15, 23, 42, 0.5);
-      backdrop-filter: blur(5px);
+      background: rgba(9, 9, 11, 0.45);
+      backdrop-filter: blur(4px);
       z-index: 999;
       display: none;
       align-items: center;
@@ -652,31 +666,32 @@
     .modal-card {
       background: #ffffff;
       width: 100%;
-      border-radius: 18px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.18);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: modalPopIn 0.2s ease-out;
     }
 
     @keyframes modalPopIn {
-      from { opacity: 0; transform: translateY(16px) scale(0.96); }
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .modal-header-bar {
       padding: 16px 22px;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #f8fafc;
+      background: #fafafa;
     }
 
     .cal-btn-icon {
       background: #ffffff;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--secondary-border);
       border-radius: 8px;
       width: 32px;
       height: 32px;
@@ -685,31 +700,25 @@
       justify-content: center;
       cursor: pointer;
       font-weight: 700;
-      color: #334155;
+      color: var(--text-main);
       transition: all 0.15s ease;
     }
 
     .cal-btn-icon:hover {
-      background: #f1f5f9;
-      border-color: #94a3b8;
-      color: #0f172a;
+      background: #f4f4f5;
+      border-color: #a1a1aa;
     }
 
-    /* 星期與日曆格子 */
+    /* 星期與日曆格子 (灰階) */
     .calendar-weekdays-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       text-align: center;
       font-size: 0.85rem;
       font-weight: 700;
-      color: #64748b;
+      color: var(--text-muted);
       padding-bottom: 8px;
-      border-bottom: 1px solid #f1f5f9;
-    }
-
-    .calendar-weekdays-grid div:first-child,
-    .calendar-weekdays-grid div:last-child {
-      color: #ef4444;
+      border-bottom: 1px solid var(--border-color);
     }
 
     .calendar-days-grid {
@@ -720,8 +729,8 @@
 
     .calendar-day-cell {
       min-height: 72px;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 10px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 8px;
       padding: 6px 8px;
       cursor: pointer;
       display: flex;
@@ -732,26 +741,25 @@
     }
 
     .calendar-day-cell:hover {
-      border-color: var(--primary);
-      background: #f8fafc;
+      border-color: #18181b;
+      background: #fafafa;
       transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
     }
 
     .calendar-day-cell.is-other-month {
-      opacity: 0.35;
-      background: #f8fafc;
+      opacity: 0.3;
+      background: #f4f4f5;
       cursor: default;
     }
 
     .calendar-day-cell.is-today {
-      border-color: #3b82f6;
-      background: #eff6ff;
+      border-color: #18181b;
+      background: #f4f4f5;
     }
 
     .calendar-day-cell.is-current-active {
-      outline: 2.5px solid #2563eb;
-      box-shadow: 0 0 0 2px #bfdbfe;
+      outline: 2.5px solid #18181b;
+      box-shadow: 0 0 0 2px #d4d4d8;
     }
 
     .day-cell-top {
@@ -763,18 +771,14 @@
     .day-number {
       font-size: 0.9rem;
       font-weight: 700;
-      color: #1e293b;
-    }
-
-    .calendar-day-cell.is-today .day-number {
-      color: #2563eb;
+      color: var(--text-main);
     }
 
     .has-archive-dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: #2563eb;
+      background: #18181b;
     }
 
     .day-cell-badge {
@@ -789,9 +793,9 @@
       text-overflow: ellipsis;
     }
 
-    .badge-done { background: #dcfce7; color: #15803d; }
-    .badge-progress { background: #e0f2fe; color: #0369a1; }
-    .badge-empty { background: #f1f5f9; color: #64748b; }
+    .badge-done { background: #18181b; color: #ffffff; }
+    .badge-progress { background: #e4e4e7; color: #18181b; }
+    .badge-empty { background: #f4f4f5; color: #71717a; }
 
     /* 列印專用 CSS (@media print) */
     @media print {
@@ -856,7 +860,7 @@
 </head>
 <body>
 
-  <!-- 頂部工具列 -->
+  <!-- 頂部工具列 (灰階極簡) -->
   <div class="toolbar">
     <div class="toolbar-title">
       <span>📋</span> 工作清單
@@ -1055,7 +1059,7 @@
           </div>
           <div class="summary-item">
             <span>簽名 / 覆核：</span>
-            <span class="editable-field" id="reviewerSign" style="display:inline-block; width:70px; border-bottom:1px solid #94a3b8;" contenteditable="true"></span>
+            <span class="editable-field" id="reviewerSign" style="display:inline-block; width:70px; border-bottom:1px solid #71717a;" contenteditable="true"></span>
           </div>
         </div>
       </footer>
@@ -1064,14 +1068,14 @@
   </div>
 
   <!-- ========================================================
-       📅 視覺化日曆存檔與讀取資料庫彈窗 (Visual Calendar Hub)
+       📅 視覺化日曆存檔與讀取資料庫彈窗 (Visual Calendar Hub - 灰階)
        ======================================================== -->
   <div class="modal-overlay" id="calendarModalOverlay" onclick="closeCalendarOnBg(event)">
     <div class="modal-card" style="max-width:680px; max-height:90vh;">
       <div class="modal-header-bar">
         <div style="display:flex; align-items:center; gap:12px;">
           <button class="cal-btn-icon" onclick="changeMonth(-1)" title="上個月">◀</button>
-          <div style="font-size:1.2rem; font-weight:800; color:#0f172a; min-width:140px; text-align:center;" id="calendarMonthTitle">2026年 8月</div>
+          <div style="font-size:1.2rem; font-weight:800; color:var(--text-main); min-width:140px; text-align:center;" id="calendarMonthTitle">2026年 8月</div>
           <button class="cal-btn-icon" onclick="changeMonth(1)" title="下個月">▶</button>
           <button class="btn btn-sm" onclick="jumpToCalendarToday()" style="padding:4px 10px; font-size:0.8rem;">
             今天
@@ -1087,11 +1091,11 @@
         <div class="calendar-days-grid" id="calendarDaysGrid"></div>
       </div>
 
-      <div style="padding:14px 20px; border-top:1px solid #e2e8f0; background:#f8fafc; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
-        <div style="display:flex; align-items:center; gap:12px; font-size:0.75rem; color:#64748b;">
-          <div style="display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; border-radius:3px; background:#dcfce7; border:1px solid #86efac;"></span>已完成 (6/6)</div>
-          <div style="display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; border-radius:3px; background:#e0f2fe; border:1px solid #7dd3fc;"></span>進行中</div>
-          <div style="display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; border-radius:3px; background:#f1f5f9; border:1px solid #cbd5e1;"></span>無紀錄</div>
+      <div style="padding:14px 20px; border-top:1px solid var(--border-color); background:#fafafa; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:12px; font-size:0.75rem; color:#71717a;">
+          <div style="display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; border-radius:3px; background:#18181b;"></span>已完成 (6/6)</div>
+          <div style="display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; border-radius:3px; background:#e4e4e7; border:1px solid #d4d4d8;"></span>進行中</div>
+          <div style="display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; border-radius:3px; background:#ffffff; border:1px solid #d4d4d8;"></span>無紀錄</div>
         </div>
         <div style="display:flex; gap:8px;">
           <button class="btn btn-sm" onclick="exportDatabaseJSON()">📤 備份匯出</button>
@@ -1105,26 +1109,26 @@
   </div>
 
   <!-- ========================================================
-       📋 複製工作清單到其他日期對話框 (Copy Date Modal)
+       📋 複製工作清單到其他日期對話框 (Copy Date Modal - 灰階)
        ======================================================== -->
   <div class="modal-overlay" id="copyDateModalOverlay" onclick="closeCopyModalOnBg(event)">
     <div class="modal-card" style="max-width:480px;">
       <div class="modal-header-bar">
-        <div style="font-size:1.1rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
+        <div style="font-size:1.1rem; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:6px;">
           <span>📋</span> 複製工作清單到其他日期
         </div>
         <button class="cal-btn-icon" onclick="closeCopyDateModal()" style="border:none; font-size:1.2rem;">✕</button>
       </div>
 
       <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; font-size:0.9rem; color:#334155;">
+        <div style="background:#fafafa; border:1px solid var(--border-color); border-radius:8px; padding:10px 14px; font-size:0.9rem; color:#27272a;">
           <strong>來源日期：</strong><span id="copySourceDateText">2026/08/19</span>
-          <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">將會複製當前所有 6 條工作事項、補充筆記與備忘內容。</div>
+          <div style="font-size:0.8rem; color:#71717a; margin-top:2px;">將會複製當前所有 6 條工作事項、補充筆記與備忘內容。</div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:6px;">
-          <label style="font-size:0.85rem; font-weight:700; color:#1e293b;">選擇目標複製日期：</label>
-          <input type="date" id="targetCopyDatePicker" style="padding:8px 12px; border:1.5px solid #cbd5e1; border-radius:8px; font-size:0.95rem; font-weight:600; outline:none;">
+          <label style="font-size:0.85rem; font-weight:700; color:var(--text-main);">選擇目標複製日期：</label>
+          <input type="date" id="targetCopyDatePicker" style="padding:8px 12px; border:1.5px solid var(--secondary-border); border-radius:8px; font-size:0.95rem; font-weight:600; outline:none;">
           
           <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
             <button type="button" class="btn btn-sm" onclick="setQuickCopyTarget(1)">👉 明天</button>
@@ -1134,18 +1138,18 @@
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px; padding-top:4px;">
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#334155; cursor:pointer;">
-            <input type="checkbox" id="resetChecksOnCopy" checked style="accent-color:#2563eb; width:16px; height:16px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#27272a; cursor:pointer;">
+            <input type="checkbox" id="resetChecksOnCopy" checked style="accent-color:#18181b; width:16px; height:16px;">
             <span>重置勾選方格（新日期方格清空為未完成，推薦）</span>
           </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#334155; cursor:pointer;">
-            <input type="checkbox" id="autoSwitchOnCopy" checked style="accent-color:#2563eb; width:16px; height:16px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#27272a; cursor:pointer;">
+            <input type="checkbox" id="autoSwitchOnCopy" checked style="accent-color:#18181b; width:16px; height:16px;">
             <span>複製完成後立即切換並跳轉至該日期</span>
           </label>
         </div>
       </div>
 
-      <div style="padding:14px 20px; border-top:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:flex-end; gap:8px;">
+      <div style="padding:14px 20px; border-top:1px solid var(--border-color); background:#fafafa; display:flex; justify-content:flex-end; gap:8px;">
         <button class="btn" onclick="closeCopyDateModal()">取消</button>
         <button class="btn btn-primary" onclick="executeCopySheet()">確定複製</button>
       </div>
@@ -1455,7 +1459,7 @@
     }
 
     // ========================================================
-    // 📅 視覺化日曆視窗渲染與操作
+    // 📅 視覺化日曆視窗渲染與操作 (灰階)
     // ========================================================
     function openCalendarModal() {
       if (currentActiveDateKey) {
@@ -1721,7 +1725,7 @@
       }
     });
 
-    // 當切換回此分頁時（例如手機與電腦切換操作），自動重新檢查雲端最新進度
+    // 當切換回此分頁時，自動重新檢查雲端最新進度
     window.addEventListener('focus', () => {
       if (FIREBASE_DB_URL) {
         const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
@@ -1730,7 +1734,6 @@
           .then(cloudDB => {
             if (cloudDB && typeof cloudDB === 'object') {
               saveDatabase(cloudDB);
-              // 若當前畫面未在打字編輯中，安靜更新顯示
               if (!document.activeElement || !document.activeElement.classList.contains('editable-field')) {
                 const activeData = cloudDB[currentActiveDateKey];
                 if (activeData) {
