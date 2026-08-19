@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工作清單範本 (一面六條) - To-Do List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #f1f5f9;
+      --paper-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      --line-color: #cbd5e1;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      padding: 24px 16px 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* 頂部操作工具列 (列印時隱藏) */
+    .toolbar {
+      width: 100%;
+      max-width: 820px;
+      background: #ffffff;
+      padding: 14px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .toolbar-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .select-style {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 0.875rem;
+      color: #334155;
+      background-color: #fff;
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* A4 紙張預覽容器 */
+    .sheet-wrapper {
+      width: 100%;
+      max-width: 820px;
+    }
+
+    .page {
+      background: var(--paper-bg);
+      width: 100%;
+      aspect-ratio: 1 / 1.414; /* A4 比例 */
+      min-height: 1020px;
+      padding: 48px 44px;
+      border-radius: 6px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    /* 頁首標題區 */
+    .page-header {
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 18px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .header-left {
+      flex: 1;
+    }
+
+    .editable-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+      outline: none;
+      padding: 2px 4px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      padding-left: 4px;
+    }
+
+    .header-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: #475569;
+    }
+
+    .meta-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .meta-line {
+      display: inline-block;
+      min-width: 130px;
+      border-bottom: 1.5px solid #94a3b8;
+      height: 20px;
+      outline: none;
+      padding: 0 4px;
+    }
+
+    /* 欄位說明標題 */
+    .table-legend {
+      display: flex;
+      align-items: center;
+      padding: 0 8px 10px 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.02em;
+      border-bottom: 1.5px solid #e2e8f0;
+    }
+
+    .legend-boxes {
+      width: 78px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .legend-num {
+      width: 32px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .legend-task {
+      flex: 1;
+      padding-left: 12px;
+    }
+
+    .legend-notes {
+      width: 130px;
+      text-align: right;
+      padding-right: 6px;
+    }
+
+    /* 6 條任務清單列表 (一面六條) */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: space-around;
+      gap: 14px;
+      margin: 12px 0 20px;
+    }
+
+    .task-row {
+      display: flex;
+      align-items: center;
+      padding: 16px 10px;
+      border-bottom: 1.5px solid var(--line-color);
+      background: #ffffff;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+      min-height: 82px;
+    }
+
+    .task-row:hover {
+      background: #f8fafc;
+    }
+
+    /* 最前方空白方格 */
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 78px;
+      flex-shrink: 0;
+    }
+
+    .square-box {
+      width: 26px;
+      height: 26px;
+      border: 2px solid #334155;
+      border-radius: 6px;
+      background: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .square-box:hover {
+      border-color: var(--primary);
+      transform: scale(1.08);
+    }
+
+    .square-box.checked {
+      background: #0f172a;
+      border-color: #0f172a;
+    }
+
+    .square-box.checked::after {
+      content: '✓';
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    /* 項目編號 */
+    .task-number {
+      width: 32px;
+      flex-shrink: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #64748b;
+      text-align: center;
+    }
+
+    /* 待處理事項內容輸入區 */
+    .task-content-area {
+      flex: 1;
+      padding: 0 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .task-input {
+      width: 100%;
+      font-size: 1.1rem;
+      color: #0f172a;
+      font-weight: 500;
+      line-height: 1.5;
+      outline: none;
+      border: none;
+      background: transparent;
+      min-height: 28px;
+    }
+
+    .task-input:empty::before {
+      content: attr(data-placeholder);
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    .task-subline {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 4px;
+      outline: none;
+      min-height: 18px;
+    }
+
+    .task-subline:empty::before {
+      content: "補充說明 / 細項筆記...";
+      color: #cbd5e1;
+    }
+
+    /* 右側備註/時間欄 */
+    .task-tag-area {
+      width: 130px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .task-note-input {
+      font-size: 0.85rem;
+      color: #64748b;
+      text-align: right;
+      width: 100%;
+      outline: none;
+      border: 1px dashed transparent;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
+
+    .task-note-input:hover, .task-note-input:focus {
+      border-color: #cbd5e1;
+      background: #ffffff;
+    }
+
+    .task-note-input:empty::before {
+      content: "時間 / 備註";
+      color: #cbd5e1;
+    }
+
+    /* 頁尾備忘與總結區 */
+    .page-footer {
+      border-top: 1.5px solid #cbd5e1;
+      padding-top: 16px;
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+
+    .memo-block {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 12px 16px;
+      min-height: 85px;
+    }
+
+    .memo-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .memo-content {
+      font-size: 0.875rem;
+      color: #334155;
+      outline: none;
+      line-height: 1.5;
+      min-height: 42px;
+    }
+
+    .memo-content:empty::before {
+      content: "今日心得、重點提醒或明日備忘事項...";
+      color: #94a3b8;
+    }
+
+    .summary-block {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #475569;
+    }
+
+    .summary-item strong {
+      color: #0f172a;
+    }
+
+    /* 單方格模式切換樣式 */
+    .single-box-mode .box-2 {
+      display: none !important;
+    }
+    .single-box-mode .checkbox-container {
+      width: 38px !important;
+    }
+    .single-box-mode .legend-boxes {
+      width: 38px !important;
+    }
+
+    /* 列印專用 CSS (@media print) */
+    @media print {
+      body {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+
+      .toolbar {
+        display: none !important;
+      }
+
+      .sheet-wrapper {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+
+      .page {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 24px 30px !important;
+        width: 100% !important;
+        min-height: 100vh !important;
+        page-break-after: always;
+      }
+
+      .task-row {
+        border-bottom: 1.5px solid #000000 !important;
+      }
+
+      .task-row:hover {
+        background: transparent !important;
+      }
+
+      .square-box {
+        border-color: #000000 !important;
+      }
+
+      .task-input:empty::before,
+      .task-subline:empty::before,
+      .task-note-input:empty::before,
+      .memo-content:empty::before {
+        content: "" !important;
+      }
+
+      .editable-title:hover, .editable-title:focus,
+      .task-note-input:hover, .task-note-input:focus {
+        border-color: transparent !important;
+        background: transparent !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部工具列 -->
+  <div class="toolbar">
+    <div class="toolbar-title">
+      <span>📋</span> 工作清單範本 (一面六條)
+    </div>
+    <div class="toolbar-actions">
+      <select id="boxModeSelect" class="select-style" onchange="toggleBoxMode(this.value)">
+        <option value="double">前方 2 個空白方格</option>
+        <option value="single">前方 1 個空白方格</option>
+      </select>
+      <button class="btn" onclick="clearAllContent()">🧹 清空內容</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ 列印 / 另存 PDF</button>
+    </div>
+  </div>
+
+  <!-- A4 工作清單範本 (一面六條) -->
+  <div class="sheet-wrapper" id="sheetContainer">
+    <div class="page">
+      
+      <!-- 頁首 -->
+      <header class="page-header">
+        <div class="header-left">
+          <div class="editable-title" contenteditable="true" spellcheck="false">每日工作清單</div>
+          <div class="subtitle">ACTION PLAN & TO-DO LIST (6 TASKS)</div>
+        </div>
+        <div class="header-meta">
+          <div class="meta-field">
+            <span>📅 日期 Date：</span>
+            <span class="meta-line" contenteditable="true"></span>
+          </div>
+          <div class="meta-field">
+            <span>🎯 今日重點目標：</span>
+            <span class="meta-line" style="min-width: 160px;" contenteditable="true"></span>
+          </div>
+        </div>
+      </header>
+
+      <!-- 欄位標籤 -->
+      <div class="table-legend">
+        <div class="legend-boxes">核對</div>
+        <div class="legend-num">編號</div>
+        <div class="legend-task">待處理工作事項 (Task Description)</div>
+        <div class="legend-notes">時間 / 備註</div>
+      </div>
+
+      <!-- 六條主要工作清單 -->
+      <main class="task-list">
+        
+        <!-- 第 1 條 -->
+        <div class="task-row">
+          <div class="checkbox-container">
+            <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
+            <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
+          </div>
+          <div class="task-number">01</div>
+          <div class="task-content-area">
+            <div class="task-input" contenteditable="true" data-placeholder="第 1 項：待處理事項內容..."></div>
+            <div class="task-subline" contenteditable="true"></div>
+          </div>
+          <div class="task-tag-area">
+            <div class="task-note-input" contenteditable="true"></div>
+          </div>
+        </div>
+
+        <!-- 第 2 條 -->
+        <div class="task-row">
+          <div class="checkbox-container">
+            <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
+            <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
+          </div>
+          <div class="task-number">02</div>
+          <div class="task-content-area">
+            <div class="task-input" contenteditable="true" data-placeholder="第 2 項：待處理事項內容..."></div>
+            <div class="task-subline" contenteditable="true"></div>
+          </div>
+          <div class="task-tag-area">
+            <div class="task-note-input" contenteditable="true"></div>
+          </div>
+        </div>
+
+        <!-- 第 3 條 -->
+        <div class="task-row">
+          <div class="checkbox-container">
+            <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
+            <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
+          </div>
+          <div class="task-number">03</div>
+          <div class="task-content-area">
+            <div class="task-input" contenteditable="true" data-placeholder="第 3 項：待處理事項內容..."></div>
+            <div class="task-subline" contenteditable="true"></div>
+          </div>
+          <div class="task-tag-area">
+            <div class="task-note-input" contenteditable="true"></div>
+          </div>
+        </div>
+
+        <!-- 第 4 條 -->
+        <div class="task-row">
+          <div class="checkbox-container">
+            <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
+            <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
+          </div>
+          <div class="task-number">04</div>
+          <div class="task-content-area">
+            <div class="task-input" contenteditable="true" data-placeholder="第 4 項：待處理事項內容..."></div>
+            <div class="task-subline" contenteditable="true"></div>
+          </div>
+          <div class="task-tag-area">
+            <div class="task-note-input" contenteditable="true"></div>
+          </div>
+        </div>
+
+        <!-- 第 5 條 -->
+        <div class="task-row">
+          <div class="checkbox-container">
+            <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
+            <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
+          </div>
+          <div class="task-number">05</div>
+          <div class="task-content-area">
+            <div class="task-input" contenteditable="true" data-placeholder="第 5 項：待處理事項內容..."></div>
+            <div class="task-subline" contenteditable="true"></div>
+          </div>
+          <div class="task-tag-area">
+            <div class="task-note-input" contenteditable="true"></div>
+          </div>
+        </div>
+
+        <!-- 第 6 條 -->
+        <div class="task-row">
+          <div class="checkbox-container">
+            <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
+            <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
+          </div>
+          <div class="task-number">06</div>
+          <div class="task-content-area">
+            <div class="task-input" contenteditable="true" data-placeholder="第 6 項：待處理事項內容..."></div>
+            <div class="task-subline" contenteditable="true"></div>
+          </div>
+          <div class="task-tag-area">
+            <div class="task-note-input" contenteditable="true"></div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- 頁尾備忘與進度欄 -->
+      <footer class="page-footer">
+        <div class="memo-block">
+          <div class="memo-title">📝 備忘與重要筆記 (Notes & Reminders)</div>
+          <div class="memo-content" contenteditable="true"></div>
+        </div>
+        <div class="summary-block">
+          <div class="summary-item">
+            <span>總任務數：</span>
+            <strong>6 項</strong>
+          </div>
+          <div class="summary-item">
+            <span>完成進度：</span>
+            <span id="completionCounter">0 / 6 完成</span>
+          </div>
+          <div class="summary-item">
+            <span>簽名 / 備註：</span>
+            <span style="display:inline-block; width:70px; border-bottom:1px solid #94a3b8;" contenteditable="true"></span>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <script>
+    // 點選打勾切換
+    function toggleCheck(el) {
+      el.classList.toggle('checked');
+      updateProgress();
+    }
+
+    // 更新完成進度
+    function updateProgress() {
+      const rows = document.querySelectorAll('.task-row');
+      let completedCount = 0;
+      rows.forEach(row => {
+        const boxes = row.querySelectorAll('.square-box.checked');
+        if (boxes.length > 0) {
+          completedCount++;
+        }
+      });
+      const counterEl = document.getElementById('completionCounter');
+      if (counterEl) {
+        counterEl.textContent = `${completedCount} / 6 完成`;
+      }
+    }
+
+    // 切換單 / 雙空白方格模式
+    function toggleBoxMode(mode) {
+      const container = document.getElementById('sheetContainer');
+      if (mode === 'single') {
+        container.classList.add('single-box-mode');
+      } else {
+        container.classList.remove('single-box-mode');
+      }
+    }
+
+    // 清空內容
+    function clearAllContent() {
+      if (confirm('確定要清空所有填寫的內容與勾選嗎？')) {
+        document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, .meta-line').forEach(el => {
+          el.textContent = '';
+        });
+        document.querySelectorAll('.square-box').forEach(box => {
+          box.classList.remove('checked');
+        });
+        updateProgress();
+      }
+    }
+  </script>
+</body>
+</html>
