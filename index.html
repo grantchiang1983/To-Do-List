@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作清單範本 (一面六條) - To-Do List</title>
+  <title>工作清單範本 (一面六條 / 歷史資料庫存檔) - To-Do List</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,6 +17,7 @@
       --line-color: #cbd5e1;
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
+      --success: #16a34a;
       --locked-bg: #f8fafc;
     }
 
@@ -30,7 +31,7 @@
       font-family: 'Plus Jakarta Sans', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-canvas);
       color: var(--text-main);
-      padding: 24px 16px 48px;
+      padding: 20px 16px 48px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -40,9 +41,9 @@
     /* 頂部操作工具列 (列印時隱藏) */
     .toolbar {
       width: 100%;
-      max-width: 820px;
+      max-width: 860px;
       background: #ffffff;
-      padding: 14px 20px;
+      padding: 12px 20px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       display: flex;
@@ -50,7 +51,7 @@
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .toolbar-title {
@@ -62,11 +63,25 @@
       gap: 8px;
     }
 
+    .save-status-indicator {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--success);
+      background: #f0fdf4;
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid #bbf7d0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.3s ease;
+    }
+
     .toolbar-actions {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .btn {
@@ -74,14 +89,14 @@
       border: 1px solid #cbd5e1;
       background: #ffffff;
       color: #334155;
-      padding: 8px 14px;
+      padding: 7px 12px;
       border-radius: 8px;
-      font-size: 0.875rem;
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.15s ease;
     }
 
@@ -101,27 +116,47 @@
       border-color: var(--primary-hover);
     }
 
+    .btn-history {
+      background: #f8fafc;
+      color: #0f172a;
+      border-color: #94a3b8;
+      position: relative;
+    }
+
+    .btn-history:hover {
+      background: #e2e8f0;
+    }
+
+    .history-badge-count {
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 0.7rem;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
     .select-style {
-      padding: 8px 12px;
+      padding: 7px 10px;
       border-radius: 8px;
       border: 1px solid #cbd5e1;
-      font-size: 0.875rem;
+      font-size: 0.85rem;
       color: #334155;
       background-color: #fff;
       cursor: pointer;
       outline: none;
     }
 
-    /* 鎖定切換開關樣式 (位於頂部工具列) */
+    /* 鎖定切換開關樣式 */
     .lock-control {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 12px;
+      padding: 6px 10px;
       border-radius: 8px;
       background: #f1f5f9;
       border: 1.5px solid #cbd5e1;
-      font-size: 0.875rem;
+      font-size: 0.85rem;
       font-weight: 600;
       color: #334155;
       cursor: pointer;
@@ -135,8 +170,8 @@
 
     .lock-control input[type="checkbox"] {
       cursor: pointer;
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
       accent-color: #dc2626;
     }
 
@@ -149,7 +184,7 @@
     /* A4 紙張預覽容器 */
     .sheet-wrapper {
       width: 100%;
-      max-width: 820px;
+      max-width: 860px;
     }
 
     .page {
@@ -547,7 +582,7 @@
     }
 
     /* ========================================================
-       🔒 鎖定模式 (Locked Mode) 核心行為與視覺效果
+       🔒 鎖定模式 (Locked Mode)
        ======================================================== */
     .locked-active [contenteditable="false"] {
       cursor: default !important;
@@ -582,6 +617,153 @@
       width: 38px !important;
     }
 
+    /* ========================================================
+       📂 歷史存檔資料庫側邊抽屜 (History Modal / Drawer)
+       ======================================================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: #ffffff;
+      width: 100%;
+      max-width: 580px;
+      max-height: 85vh;
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      color: #64748b;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .modal-close-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .modal-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .history-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.15s ease;
+      background: #ffffff;
+    }
+
+    .history-card:hover {
+      border-color: #94a3b8;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      background: #f8fafc;
+    }
+
+    .history-info {
+      flex: 1;
+    }
+
+    .history-date {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .history-meta-sub {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .history-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      border-radius: 6px;
+    }
+
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: #94a3b8;
+    }
+
     /* 列印專用 CSS (@media print) */
     @media print {
       body {
@@ -589,7 +771,7 @@
         padding: 0 !important;
       }
 
-      .toolbar, .lock-banner, .calendar-trigger-btn {
+      .toolbar, .lock-banner, .calendar-trigger-btn, .modal-overlay {
         display: none !important;
       }
 
@@ -644,24 +826,38 @@
 </head>
 <body>
 
-  <!-- 頂部工具列 (包含鎖定開關) -->
+  <!-- 頂部工具列 -->
   <div class="toolbar">
     <div class="toolbar-title">
-      <span>📋</span> 工作清單範本 (一面六條)
+      <span>📋</span> 工作清單範本
+      <span class="save-status-indicator" id="saveIndicator">✓ 已自動儲存</span>
     </div>
+    
     <div class="toolbar-actions">
+      <!-- 歷史資料庫管理按鈕 -->
+      <button class="btn btn-history" onclick="openHistoryModal()" title="開啟資料庫歷史存檔列表">
+        📂 歷史存檔 <span class="history-badge-count" id="historyCountBadge">0</span>
+      </button>
+
+      <!-- 建立/重置新的一天 -->
+      <button class="btn" onclick="createNewDay()" title="建立新的一天工作清單">
+        ➕ 新的一天
+      </button>
+
       <!-- 鎖定控制開關 -->
-      <label class="lock-control" id="toolbarLockLabel">
+      <label class="lock-control" id="toolbarLockLabel" title="鎖定編輯防止誤觸修改">
         <input type="checkbox" id="toolbarLockCheckbox" onchange="setLockState(this.checked)">
-        <span id="toolbarLockText">🔒 鎖定編輯</span>
+        <span id="toolbarLockText">🔒 鎖定</span>
       </label>
 
+      <!-- 方格模式切換 -->
       <select id="boxModeSelect" class="select-style" onchange="toggleBoxMode(this.value)">
-        <option value="double">前方 2 個空白方格</option>
-        <option value="single">前方 1 個空白方格</option>
+        <option value="double">前方 2 個方格</option>
+        <option value="single">前方 1 個方格</option>
       </select>
-      <button class="btn" id="clearBtn" onclick="clearAllContent()">🧹 清空內容</button>
-      <button class="btn btn-primary" onclick="window.print()">🖨️ 列印 / 另存 PDF</button>
+
+      <button class="btn" id="clearBtn" onclick="clearAllContent()">🧹 清空</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ 列印 / PDF</button>
     </div>
   </div>
 
@@ -669,24 +865,24 @@
   <div class="sheet-wrapper" id="sheetContainer">
     <div class="page" id="pageSheet">
       
-      <!-- 鎖定提示橫條 (鎖定時於畫面上方提醒) -->
+      <!-- 鎖定提示橫條 -->
       <div class="lock-banner" id="lockBanner">
         <span>🔒 頁面已處於「鎖定保護」狀態，無法編輯文字內容（方格仍可勾選進度）。</span>
         <button class="btn" style="padding: 2px 8px; font-size: 0.75rem;" onclick="setLockState(false)">解除鎖定</button>
       </div>
 
-      <!-- 頁首 (乾淨版面，移除日期上方多餘的勾選欄位) -->
+      <!-- 頁首 -->
       <header class="page-header">
         <div class="header-left">
-          <div class="editable-title editable-field" contenteditable="true" spellcheck="false">每日工作清單</div>
+          <div class="editable-title editable-field" contenteditable="true" spellcheck="false" id="pageTitle">每日工作清單</div>
           <div class="subtitle">ACTION PLAN & TO-DO LIST (6 TASKS)</div>
         </div>
         <div class="header-meta">
-          <!-- 日期欄位：可直接打字輸入，也可點擊日曆圖示跳出日曆點選 -->
+          <!-- 日期欄位：支援打字輸入與日曆點選 -->
           <div class="meta-field">
             <span>📅 日期 Date：</span>
             <div class="date-picker-wrapper">
-              <input type="text" id="dateTextInput" class="date-text-input" placeholder="可打字或點日曆" title="可直接鍵盤輸入日期，或點擊右側日曆選取">
+              <input type="text" id="dateTextInput" class="date-text-input" placeholder="可打字或點日曆" title="可直接鍵盤輸入日期，或點擊右側日曆選取" oninput="triggerAutoSave()">
               <button type="button" class="calendar-trigger-btn" id="calendarBtn" title="點擊開啟日曆選擇日期" onclick="openCalendarPicker()">
                 📅
               </button>
@@ -697,7 +893,7 @@
           <!-- 今日核心目標 -->
           <div class="meta-field">
             <span>🎯 今日重點目標：</span>
-            <span class="meta-line editable-field" style="min-width: 140px;" contenteditable="true"></span>
+            <span class="meta-line editable-field" id="targetGoal" style="min-width: 140px;" contenteditable="true"></span>
           </div>
         </div>
       </header>
@@ -711,10 +907,10 @@
       </div>
 
       <!-- 六條主要工作清單 -->
-      <main class="task-list">
+      <main class="task-list" id="taskListContainer">
         
-        <!-- 第 1 條 -->
-        <div class="task-row">
+        <!-- 項目 1 -->
+        <div class="task-row" data-row="0">
           <div class="checkbox-container">
             <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
             <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
@@ -729,8 +925,8 @@
           </div>
         </div>
 
-        <!-- 第 2 條 -->
-        <div class="task-row">
+        <!-- 項目 2 -->
+        <div class="task-row" data-row="1">
           <div class="checkbox-container">
             <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
             <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
@@ -745,8 +941,8 @@
           </div>
         </div>
 
-        <!-- 第 3 條 -->
-        <div class="task-row">
+        <!-- 項目 3 -->
+        <div class="task-row" data-row="2">
           <div class="checkbox-container">
             <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
             <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
@@ -761,8 +957,8 @@
           </div>
         </div>
 
-        <!-- 第 4 條 -->
-        <div class="task-row">
+        <!-- 項目 4 -->
+        <div class="task-row" data-row="3">
           <div class="checkbox-container">
             <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
             <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
@@ -777,8 +973,8 @@
           </div>
         </div>
 
-        <!-- 第 5 條 -->
-        <div class="task-row">
+        <!-- 項目 5 -->
+        <div class="task-row" data-row="4">
           <div class="checkbox-container">
             <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
             <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
@@ -793,8 +989,8 @@
           </div>
         </div>
 
-        <!-- 第 6 條 -->
-        <div class="task-row">
+        <!-- 項目 6 -->
+        <div class="task-row" data-row="5">
           <div class="checkbox-container">
             <div class="square-box box-1" title="點擊勾選" onclick="toggleCheck(this)"></div>
             <div class="square-box box-2" title="點擊勾選" onclick="toggleCheck(this)"></div>
@@ -815,7 +1011,7 @@
       <footer class="page-footer">
         <div class="memo-block">
           <div class="memo-title">📝 備忘與重要筆記 (Notes & Reminders)</div>
-          <div class="memo-content editable-field" contenteditable="true"></div>
+          <div class="memo-content editable-field" id="memoContent" contenteditable="true"></div>
         </div>
         <div class="summary-block">
           <div class="summary-item">
@@ -828,7 +1024,7 @@
           </div>
           <div class="summary-item">
             <span>簽名 / 覆核：</span>
-            <span class="editable-field" style="display:inline-block; width:70px; border-bottom:1px solid #94a3b8;" contenteditable="true"></span>
+            <span class="editable-field" id="reviewerSign" style="display:inline-block; width:70px; border-bottom:1px solid #94a3b8;" contenteditable="true"></span>
           </div>
         </div>
       </footer>
@@ -836,11 +1032,343 @@
     </div>
   </div>
 
+  <!-- 📂 歷史資料庫存檔彈出視窗 (Modal) -->
+  <div class="modal-overlay" id="historyModalOverlay" onclick="closeModalOnBg(event)">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>📂 歷史存檔資料庫</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeHistoryModal()">✕</button>
+      </div>
+
+      <div class="modal-body" id="historyListContainer">
+        <!-- 動態渲染歷史紀錄 -->
+      </div>
+
+      <div class="modal-footer">
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm" onclick="exportDatabaseJSON()" title="將所有日期存檔備份下載為 JSON 檔案">
+            📤 備份匯出
+          </button>
+          <label class="btn btn-sm" style="cursor:pointer;" title="從備份 JSON 檔案還原資料庫">
+            📥 還原匯入
+            <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importDatabaseJSON(this)">
+          </label>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="closeHistoryModal()">完成</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // ========================================================
+    // 🗄️ 本地資料庫核心 (LocalStorage Database Engine)
+    // ========================================================
+    const DB_KEY = 'todo_app_daily_database_v1';
+    let saveTimeout = null;
+
+    // 取得資料庫所有存檔
+    function getDatabase() {
+      try {
+        const raw = localStorage.getItem(DB_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        console.error('讀取資料庫失敗', e);
+        return {};
+      }
+    }
+
+    // 儲存資料庫
+    function saveDatabase(db) {
+      try {
+        localStorage.setItem(DB_KEY, JSON.stringify(db));
+        updateHistoryCountBadge();
+      } catch (e) {
+        console.error('寫入資料庫失敗', e);
+      }
+    }
+
+    // 收集當前頁面所有資料為一個資料物件
+    function getCurrentSheetData() {
+      const dateText = document.getElementById('dateTextInput').value.trim();
+      const rawDate = document.getElementById('nativeDatePicker').value.trim();
+      const title = document.getElementById('pageTitle').textContent.trim();
+      const target = document.getElementById('targetGoal').textContent.trim();
+      const memo = document.getElementById('memoContent').textContent.trim();
+      const reviewer = document.getElementById('reviewerSign').textContent.trim();
+      const boxMode = document.getElementById('boxModeSelect').value;
+
+      const rows = [];
+      document.querySelectorAll('.task-row').forEach(row => {
+        const box1 = row.querySelector('.box-1').classList.contains('checked');
+        const box2 = row.querySelector('.box-2').classList.contains('checked');
+        const text = row.querySelector('.task-input').textContent.trim();
+        const subline = row.querySelector('.task-subline').textContent.trim();
+        const note = row.querySelector('.task-note-input').textContent.trim();
+        rows.push({ box1, box2, text, subline, note });
+      });
+
+      // 產生記錄鍵值 ID（若無日期則以「未命名_建立時間」）
+      const recordKey = dateText || (rawDate ? rawDate : '未設定日期');
+
+      return {
+        key: recordKey,
+        dateText,
+        rawDate,
+        title,
+        target,
+        memo,
+        reviewer,
+        boxMode,
+        rows,
+        updatedAt: Date.now()
+      };
+    }
+
+    // 將資料物件載入並渲染到畫面上
+    function loadSheetData(data) {
+      if (!data) return;
+
+      document.getElementById('dateTextInput').value = data.dateText || '';
+      document.getElementById('nativeDatePicker').value = data.rawDate || '';
+      document.getElementById('pageTitle').textContent = data.title || '每日工作清單';
+      document.getElementById('targetGoal').textContent = data.target || '';
+      document.getElementById('memoContent').textContent = data.memo || '';
+      document.getElementById('reviewerSign').textContent = data.reviewer || '';
+
+      if (data.boxMode) {
+        document.getElementById('boxModeSelect').value = data.boxMode;
+        toggleBoxMode(data.boxMode);
+      }
+
+      if (Array.isArray(data.rows)) {
+        const rowEls = document.querySelectorAll('.task-row');
+        data.rows.forEach((r, idx) => {
+          if (rowEls[idx]) {
+            const b1 = rowEls[idx].querySelector('.box-1');
+            const b2 = rowEls[idx].querySelector('.box-2');
+            const txt = rowEls[idx].querySelector('.task-input');
+            const sub = rowEls[idx].querySelector('.task-subline');
+            const nt = rowEls[idx].querySelector('.task-note-input');
+
+            if (r.box1) b1.classList.add('checked'); else b1.classList.remove('checked');
+            if (r.box2) b2.classList.add('checked'); else b2.classList.remove('checked');
+            txt.textContent = r.text || '';
+            sub.textContent = r.subline || '';
+            nt.textContent = r.note || '';
+          }
+        });
+      }
+
+      updateProgress();
+      showSaveIndicator('✓ 資料已載入');
+    }
+
+    // 自動儲存觸發器（延遲 400ms 避免頻繁寫入）
+    function triggerAutoSave() {
+      if (document.body.classList.contains('locked-active')) return;
+      const indicator = document.getElementById('saveIndicator');
+      if (indicator) indicator.textContent = '💾 儲存中...';
+
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        const currentData = getCurrentSheetData();
+        const db = getDatabase();
+        // 儲存到對應鍵值
+        db[currentData.key] = currentData;
+        // 同時記錄最後開啟的存檔鍵值
+        db['_last_active_key'] = currentData.key;
+        saveDatabase(db);
+        showSaveIndicator('✓ 已自動儲存');
+      }, 400);
+    }
+
+    function showSaveIndicator(msg) {
+      const indicator = document.getElementById('saveIndicator');
+      if (indicator) {
+        indicator.textContent = msg;
+        indicator.style.opacity = '1';
+      }
+    }
+
+    // 更新歷史存檔數量標籤
+    function updateHistoryCountBadge() {
+      const db = getDatabase();
+      const keys = Object.keys(db).filter(k => k !== '_last_active_key');
+      const badge = document.getElementById('historyCountBadge');
+      if (badge) badge.textContent = keys.length;
+    }
+
+    // 建立新的一天
+    function createNewDay() {
+      if (confirm('確定要建立「新的一天」清單嗎？（目前的內容已自動保存在資料庫中）')) {
+        // 清空畫面
+        document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, .meta-line').forEach(el => {
+          el.textContent = '';
+        });
+        document.querySelectorAll('.square-box').forEach(box => {
+          box.classList.remove('checked');
+        });
+
+        // 設定今天日期
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+        const weekdayStr = weekdays[today.getDay()];
+        
+        document.getElementById('nativeDatePicker').value = `${yyyy}-${mm}-${dd}`;
+        document.getElementById('dateTextInput').value = `${yyyy}/${mm}/${dd} (週${weekdayStr})`;
+
+        updateProgress();
+        triggerAutoSave();
+      }
+    }
+
+    // ========================================================
+    // 📂 歷史存檔視窗 UI 與操作
+    // ========================================================
+    function openHistoryModal() {
+      renderHistoryList();
+      document.getElementById('historyModalOverlay').classList.add('show');
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('historyModalOverlay').classList.remove('show');
+    }
+
+    function closeModalOnBg(e) {
+      if (e.target.id === 'historyModalOverlay') {
+        closeHistoryModal();
+      }
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('historyListContainer');
+      const db = getDatabase();
+      const keys = Object.keys(db).filter(k => k !== '_last_active_key');
+
+      if (keys.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div style="font-size:2rem; margin-bottom:8px;">📭</div>
+            <div>目前資料庫尚無任何存檔</div>
+            <div style="font-size:0.8rem; margin-top:4px;">在頁面上輸入內容或日期即會自動為您保存！</div>
+          </div>
+        `;
+        return;
+      }
+
+      // 依最後更新時間排序（最新的在最前）
+      keys.sort((a, b) => (db[b].updatedAt || 0) - (db[a].updatedAt || 0));
+
+      let html = '';
+      keys.forEach(k => {
+        const item = db[k];
+        let completed = 0;
+        if (Array.isArray(item.rows)) {
+          completed = item.rows.filter(r => r.box1 || r.box2).length;
+        }
+        const timeStr = item.updatedAt ? new Date(item.updatedAt).toLocaleString('zh-TW', { hour12: false }) : '';
+
+        html += `
+          <div class="history-card">
+            <div class="history-info">
+              <div class="history-date">
+                📅 ${item.dateText || item.key}
+                <span style="font-size:0.75rem; font-weight:600; padding:1px 6px; border-radius:4px; background:${completed === 6 ? '#dcfce7; color:#15803d;' : '#f1f5f9; color:#475569;'}">
+                  ${completed} / 6 完成
+                </span>
+              </div>
+              <div class="history-meta-sub">
+                🎯 重點：${item.target || '(未設定目標)'} · 🕒 儲存時間：${timeStr}
+              </div>
+            </div>
+            <div class="history-actions">
+              <button class="btn btn-sm btn-primary" onclick="loadHistoryItem('${encodeURIComponent(k)}')">
+                讀取
+              </button>
+              <button class="btn btn-sm" style="color:#dc2626;" onclick="deleteHistoryItem('${encodeURIComponent(k)}')">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // 讀取特定歷史檔案
+    function loadHistoryItem(encodedKey) {
+      const key = decodeURIComponent(encodedKey);
+      const db = getDatabase();
+      if (db[key]) {
+        loadSheetData(db[key]);
+        closeHistoryModal();
+      }
+    }
+
+    // 刪除特定歷史檔案
+    function deleteHistoryItem(encodedKey) {
+      const key = decodeURIComponent(encodedKey);
+      if (confirm(`確定要刪除「${key}」這筆存檔紀錄嗎？`)) {
+        const db = getDatabase();
+        delete db[key];
+        saveDatabase(db);
+        renderHistoryList();
+      }
+    }
+
+    // 📤 匯出資料庫為 JSON 檔案
+    function exportDatabaseJSON() {
+      const db = getDatabase();
+      const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `工作清單備份_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // 📥 匯入 JSON 檔案還原資料庫
+    function importDatabaseJSON(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (typeof imported === 'object' && imported !== null) {
+            const currentDb = getDatabase();
+            const merged = { ...currentDb, ...imported };
+            saveDatabase(merged);
+            renderHistoryList();
+            alert('🎉 備份存檔還原成功！');
+          } else {
+            alert('檔案格式錯誤，請選擇正確的 JSON 備份檔！');
+          }
+        } catch (err) {
+          alert('解析檔案失敗，請確認檔案格式是否正確！');
+        }
+      };
+      reader.readAsText(file);
+      input.value = '';
+    }
+
+    // ========================================================
+    // 互動控制邏輯 (打勾、進度、日曆、鎖定等)
+    // ========================================================
+
     // 點選打勾切換
     function toggleCheck(el) {
       el.classList.toggle('checked');
       updateProgress();
+      triggerAutoSave();
     }
 
     // 更新完成進度
@@ -873,7 +1401,7 @@
       }
     }
 
-    // 📅 日曆選取後格式化填入輸入框
+    // 📅 日曆選取後格式化填入輸入框，並檢查該日期是否已有存檔
     function onNativeDatePicked(val) {
       if (!val) return;
       const parts = val.split('-');
@@ -883,12 +1411,22 @@
         const weekdayStr = weekdays[d.getDay()];
         const formatted = `${parts[0]}/${parts[1]}/${parts[2]} (週${weekdayStr})`;
         document.getElementById('dateTextInput').value = formatted;
+
+        // 檢查資料庫是否有該日期的存檔
+        const db = getDatabase();
+        if (db[formatted]) {
+          if (confirm(`找到「${formatted}」已有的存檔，是否直接載入？`)) {
+            loadSheetData(db[formatted]);
+            return;
+          }
+        }
       } else {
         document.getElementById('dateTextInput').value = val;
       }
+      triggerAutoSave();
     }
 
-    // 🔒 鎖定 / 解鎖功能 (透過工具列統一控制)
+    // 🔒 鎖定 / 解鎖功能
     function setLockState(isLocked) {
       const body = document.body;
       const editableFields = document.querySelectorAll('.editable-field');
@@ -907,7 +1445,7 @@
         if (dateTextInput) dateTextInput.readOnly = true;
         if (calendarBtn) calendarBtn.disabled = true;
         if (toolbarLabel) toolbarLabel.classList.add('is-locked');
-        if (toolbarText) toolbarText.textContent = '🔒 已鎖定 (唯讀)';
+        if (toolbarText) toolbarText.textContent = '🔒 已鎖定';
         if (clearBtn) clearBtn.disabled = true;
       } else {
         body.classList.remove('locked-active');
@@ -915,7 +1453,7 @@
         if (dateTextInput) dateTextInput.readOnly = false;
         if (calendarBtn) calendarBtn.disabled = false;
         if (toolbarLabel) toolbarLabel.classList.remove('is-locked');
-        if (toolbarText) toolbarText.textContent = '🔒 鎖定編輯';
+        if (toolbarText) toolbarText.textContent = '🔒 鎖定';
         if (clearBtn) clearBtn.disabled = false;
       }
     }
@@ -928,6 +1466,7 @@
       } else {
         container.classList.remove('single-box-mode');
       }
+      triggerAutoSave();
     }
 
     // 清空內容
@@ -949,8 +1488,38 @@
           box.classList.remove('checked');
         });
         updateProgress();
+        triggerAutoSave();
       }
     }
+
+    // 監聽所有可編輯欄位的輸入，即時自動儲存
+    document.addEventListener('input', function(e) {
+      if (e.target.classList.contains('editable-field') || e.target.classList.contains('date-text-input')) {
+        triggerAutoSave();
+      }
+    });
+
+    // 頁面初始化：載入最後一次的活動存檔，或建立今天預設
+    window.addEventListener('DOMContentLoaded', () => {
+      updateHistoryCountBadge();
+      const db = getDatabase();
+      const lastKey = db['_last_active_key'];
+      if (lastKey && db[lastKey]) {
+        loadSheetData(db[lastKey]);
+      } else {
+        // 設定今天日期
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+        const weekdayStr = weekdays[today.getDay()];
+        
+        document.getElementById('nativeDatePicker').value = `${yyyy}-${mm}-${dd}`;
+        document.getElementById('dateTextInput').value = `${yyyy}/${mm}/${dd} (週${weekdayStr})`;
+        triggerAutoSave();
+      }
+    });
   </script>
 </body>
 </html>
