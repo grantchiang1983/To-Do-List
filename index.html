@@ -112,7 +112,7 @@
       outline: none;
     }
 
-    /* 鎖定切換開關樣式 */
+    /* 鎖定切換開關樣式 (位於頂部工具列) */
     .lock-control {
       display: inline-flex;
       align-items: center;
@@ -222,7 +222,7 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 8px;
+      gap: 10px;
       font-size: 0.9rem;
       color: #475569;
     }
@@ -299,33 +299,6 @@
       height: 0;
       opacity: 0;
       pointer-events: none;
-    }
-
-    /* 頁面上的鎖定欄位 */
-    .page-lock-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #475569;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .page-lock-badge input {
-      cursor: pointer;
-      accent-color: #dc2626;
-    }
-
-    .page-lock-badge.is-locked {
-      background: #fef2f2;
-      border-color: #f87171;
-      color: #dc2626;
     }
 
     /* 欄位說明標題 */
@@ -616,7 +589,7 @@
         padding: 0 !important;
       }
 
-      .toolbar, .lock-banner, .page-lock-badge, .calendar-trigger-btn {
+      .toolbar, .lock-banner, .calendar-trigger-btn {
         display: none !important;
       }
 
@@ -671,7 +644,7 @@
 </head>
 <body>
 
-  <!-- 頂部工具列 -->
+  <!-- 頂部工具列 (包含鎖定開關) -->
   <div class="toolbar">
     <div class="toolbar-title">
       <span>📋</span> 工作清單範本 (一面六條)
@@ -696,27 +669,19 @@
   <div class="sheet-wrapper" id="sheetContainer">
     <div class="page" id="pageSheet">
       
-      <!-- 鎖定提示橫條 -->
+      <!-- 鎖定提示橫條 (鎖定時於畫面上方提醒) -->
       <div class="lock-banner" id="lockBanner">
         <span>🔒 頁面已處於「鎖定保護」狀態，無法編輯文字內容（方格仍可勾選進度）。</span>
         <button class="btn" style="padding: 2px 8px; font-size: 0.75rem;" onclick="setLockState(false)">解除鎖定</button>
       </div>
 
-      <!-- 頁首 -->
+      <!-- 頁首 (乾淨版面，移除日期上方多餘的勾選欄位) -->
       <header class="page-header">
         <div class="header-left">
           <div class="editable-title editable-field" contenteditable="true" spellcheck="false">每日工作清單</div>
           <div class="subtitle">ACTION PLAN & TO-DO LIST (6 TASKS)</div>
         </div>
         <div class="header-meta">
-          <div class="meta-field">
-            <!-- 頁面內的鎖定欄位 -->
-            <label class="page-lock-badge" id="pageLockBadge" title="勾選後將鎖定全頁文字，防止誤觸修改">
-              <input type="checkbox" id="pageLockCheckbox" onchange="setLockState(this.checked)">
-              <span id="pageLockText">🔒 鎖定清單</span>
-            </label>
-          </div>
-          
           <!-- 日期欄位：可直接打字輸入，也可點擊日曆圖示跳出日曆點選 -->
           <div class="meta-field">
             <span>📅 日期 Date：</span>
@@ -729,6 +694,7 @@
             </div>
           </div>
 
+          <!-- 今日核心目標 -->
           <div class="meta-field">
             <span>🎯 今日重點目標：</span>
             <span class="meta-line editable-field" style="min-width: 140px;" contenteditable="true"></span>
@@ -922,23 +888,18 @@
       }
     }
 
-    // 🔒 鎖定 / 解鎖功能
+    // 🔒 鎖定 / 解鎖功能 (透過工具列統一控制)
     function setLockState(isLocked) {
       const body = document.body;
       const editableFields = document.querySelectorAll('.editable-field');
       const toolbarCheckbox = document.getElementById('toolbarLockCheckbox');
-      const pageCheckbox = document.getElementById('pageLockCheckbox');
       const toolbarLabel = document.getElementById('toolbarLockLabel');
-      const pageBadge = document.getElementById('pageLockBadge');
       const toolbarText = document.getElementById('toolbarLockText');
-      const pageText = document.getElementById('pageLockText');
       const clearBtn = document.getElementById('clearBtn');
       const dateTextInput = document.getElementById('dateTextInput');
       const calendarBtn = document.getElementById('calendarBtn');
 
-      // 同步兩個勾選框狀態
       if (toolbarCheckbox) toolbarCheckbox.checked = isLocked;
-      if (pageCheckbox) pageCheckbox.checked = isLocked;
 
       if (isLocked) {
         body.classList.add('locked-active');
@@ -946,9 +907,7 @@
         if (dateTextInput) dateTextInput.readOnly = true;
         if (calendarBtn) calendarBtn.disabled = true;
         if (toolbarLabel) toolbarLabel.classList.add('is-locked');
-        if (pageBadge) pageBadge.classList.add('is-locked');
         if (toolbarText) toolbarText.textContent = '🔒 已鎖定 (唯讀)';
-        if (pageText) pageText.textContent = '🔒 已鎖定';
         if (clearBtn) clearBtn.disabled = true;
       } else {
         body.classList.remove('locked-active');
@@ -956,9 +915,7 @@
         if (dateTextInput) dateTextInput.readOnly = false;
         if (calendarBtn) calendarBtn.disabled = false;
         if (toolbarLabel) toolbarLabel.classList.remove('is-locked');
-        if (pageBadge) pageBadge.classList.remove('is-locked');
         if (toolbarText) toolbarText.textContent = '🔒 鎖定編輯';
-        if (pageText) pageText.textContent = '🔒 鎖定清單';
         if (clearBtn) clearBtn.disabled = false;
       }
     }
