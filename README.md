@@ -54,8 +54,8 @@ Firebase Realtime Database 支援透過時間戳記（Timestamp）設定存取�
 ```json
 {
   "rules": {
-    ".read": "now < 1818687749000",
-    ".write": "now < 1818687749000"
+    ".read": "now < 1818687749000",  // 2027-08-19
+    ".write": "now < 1818687749000"  // 2027-08-19
   }
 }
 ```
