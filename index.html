@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作清單 (一面六條 / 灰階極簡風 / Firebase 雲端同步) - To-Do List</title>
+  <title>工作清單 (一面六條 / 密碼防護 / Firebase 雲端同步) - To-Do List</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -36,6 +36,143 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
+    }
+
+    /* ========================================================
+       🔒 密碼鎖定防護全螢幕遮罩 (Password Gate Overlay)
+       ======================================================== */
+    .auth-gate-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #f4f4f5;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-gate-overlay.unlocked {
+      display: none !important;
+    }
+
+    .auth-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 380px;
+      padding: 36px 28px;
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      animation: modalPopIn 0.25s ease-out;
+    }
+
+    .auth-icon-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #18181b;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .auth-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .auth-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .auth-input-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .auth-pin-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1.5px solid var(--secondary-border);
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-align: center;
+      color: var(--text-main);
+      background: #fafafa;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .auth-pin-input:focus {
+      border-color: #18181b;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px #e4e4e7;
+    }
+
+    .auth-error-text {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #71717a;
+      min-height: 18px;
+      display: none;
+    }
+
+    .auth-error-text.show {
+      display: block;
+      color: #18181b;
+    }
+
+    .auth-remember-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .auth-remember-row input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: #18181b;
+      cursor: pointer;
+    }
+
+    .auth-btn-submit {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      background: #18181b;
+      color: #ffffff;
+      border: 1px solid #18181b;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .auth-btn-submit:hover {
+      background: #27272a;
+      border-color: #27272a;
     }
 
     /* 頂部操作工具列 (灰階極簡風) */
@@ -804,7 +941,7 @@
         padding: 0 !important;
       }
 
-      .toolbar, .lock-banner, .calendar-trigger-btn, .date-nav-btn, .modal-overlay {
+      .toolbar, .lock-banner, .calendar-trigger-btn, .date-nav-btn, .modal-overlay, .auth-gate-overlay {
         display: none !important;
       }
 
@@ -860,6 +997,31 @@
 </head>
 <body>
 
+  <!-- ========================================================
+       🔒 密碼防護鎖定畫面 (Password Protection Screen)
+       ======================================================== -->
+  <div class="auth-gate-overlay" id="authGateOverlay">
+    <div class="auth-card">
+      <div class="auth-icon-circle">🔒</div>
+      <div>
+        <div class="auth-title">私人工作清單</div>
+        <div class="auth-desc" style="margin-top:4px;">此清單已受密碼防護，請輸入存取密碼以解鎖並同步雲端資料庫。</div>
+      </div>
+
+      <div class="auth-input-group">
+        <input type="password" id="authPinInput" class="auth-pin-input" placeholder="••••••" maxlength="20" autofocus autocomplete="current-password">
+        <div class="auth-error-text" id="authErrorText">❌ 密碼錯誤，請重新輸入！</div>
+      </div>
+
+      <label class="auth-remember-row">
+        <input type="checkbox" id="rememberAuthCheckbox" checked>
+        <span>在此裝置保持登入（下次免輸入）</span>
+      </label>
+
+      <button type="button" class="auth-btn-submit" onclick="submitAuthPassword()">解鎖進入</button>
+    </div>
+  </div>
+
   <!-- 頂部工具列 (灰階極簡) -->
   <div class="toolbar">
     <div class="toolbar-title">
@@ -892,6 +1054,11 @@
 
       <button class="btn" id="clearBtn" onclick="clearAllContent()">🧹 清空</button>
       <button class="btn btn-primary" onclick="window.print()">🖨️ 列印 / PDF</button>
+
+      <!-- 重新上鎖登出按鈕 -->
+      <button class="btn" onclick="lockAppManually()" title="重新鎖定此網頁畫面" style="padding: 7px 10px; color:#71717a;">
+        🔒 鎖定離線
+      </button>
     </div>
   </div>
 
@@ -1158,10 +1325,95 @@
 
   <script>
     // ========================================================
+    // 🔒 密碼驗證管理 (預設密碼: 720528)
+    // ========================================================
+    const APP_PASSWORD_PIN = '720528';
+    const AUTH_STORAGE_KEY = 'todo_app_auth_token_v1';
+    let isAuthenticated = false;
+
+    function checkAuthStatus() {
+      // 支援網址參數直接解鎖 (例: ?pin=720528)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlPin = urlParams.get('pin');
+      if (urlPin === APP_PASSWORD_PIN) {
+        unlockApp(true);
+        return;
+      }
+
+      // 檢查 localStorage 中是否已有已認證記號
+      const storedToken = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (storedToken === btoa(APP_PASSWORD_PIN)) {
+        unlockApp(false);
+      } else {
+        showAuthGate();
+      }
+    }
+
+    function showAuthGate() {
+      isAuthenticated = false;
+      const overlay = document.getElementById('authGateOverlay');
+      if (overlay) overlay.classList.remove('unlocked');
+      setTimeout(() => {
+        const input = document.getElementById('authPinInput');
+        if (input) input.focus();
+      }, 100);
+    }
+
+    function unlockApp(remember = true) {
+      isAuthenticated = true;
+      const overlay = document.getElementById('authGateOverlay');
+      if (overlay) overlay.classList.add('unlocked');
+      const errText = document.getElementById('authErrorText');
+      if (errText) errText.classList.remove('show');
+
+      if (remember) {
+        localStorage.setItem(AUTH_STORAGE_KEY, btoa(APP_PASSWORD_PIN));
+      }
+
+      // 解鎖後初始化應用程式與雲端同步
+      initAppAfterAuth();
+    }
+
+    function submitAuthPassword() {
+      const input = document.getElementById('authPinInput');
+      const errText = document.getElementById('authErrorText');
+      const remember = document.getElementById('rememberAuthCheckbox').checked;
+      const val = input.value.trim();
+
+      if (val === APP_PASSWORD_PIN) {
+        unlockApp(remember);
+      } else {
+        if (errText) errText.classList.add('show');
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    // 手動重新上鎖 (登出)
+    function lockAppManually() {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      const input = document.getElementById('authPinInput');
+      if (input) input.value = '';
+      showAuthGate();
+    }
+
+    // 監聽 Enter 鍵解鎖
+    document.addEventListener('DOMContentLoaded', () => {
+      const pinInput = document.getElementById('authPinInput');
+      if (pinInput) {
+        pinInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            submitAuthPassword();
+          }
+        });
+      }
+      checkAuthStatus();
+    });
+
+    // ========================================================
     // 🗄️ Google Firebase 雲端即時同步資料庫核心 (Zero-Config Global Cloud DB)
     // ========================================================
     const DB_KEY = 'todo_app_calendar_db_v2';
-    // 內嵌使用者的 Google Firebase 專屬資料庫網址
     const FIREBASE_DB_URL = 'https://github-to-do-list-database-default-rtdb.firebaseio.com';
 
     let currentActiveDateKey = ''; // 格式：'YYYY-MM-DD'
@@ -1305,7 +1557,7 @@
 
     // 自動儲存觸發器 (本地即時 + 雲端自動同步)
     function triggerAutoSave() {
-      if (document.body.classList.contains('locked-active')) return;
+      if (!isAuthenticated || document.body.classList.contains('locked-active')) return;
       const indicator = document.getElementById('saveIndicator');
       if (indicator) indicator.textContent = '💾 雲端儲存中...';
 
@@ -1326,7 +1578,7 @@
 
     // Google Firebase 雲端自動即時同步引擎
     function triggerFirebaseSync() {
-      if (!FIREBASE_DB_URL) return;
+      if (!isAuthenticated || !FIREBASE_DB_URL) return;
       clearTimeout(firebaseSyncTimeout);
       firebaseSyncTimeout = setTimeout(() => {
         const db = getDatabase();
@@ -1696,8 +1948,8 @@
       }
     });
 
-    // 頁面初始化：自動連線 Firebase 雲端資料庫
-    window.addEventListener('DOMContentLoaded', () => {
+    // 驗證解鎖後的初始化流程
+    function initAppAfterAuth() {
       const db = getDatabase();
       const lastKey = db['_last_date_key'];
       const todayKey = formatDateKey(new Date());
@@ -1723,11 +1975,11 @@
             showSaveIndicator('✓ 雲端已連線');
           });
       }
-    });
+    }
 
     // 當切換回此分頁時，自動重新檢查雲端最新進度
     window.addEventListener('focus', () => {
-      if (FIREBASE_DB_URL) {
+      if (isAuthenticated && FIREBASE_DB_URL) {
         const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
         fetch(`${cleanUrl}/todos.json`)
           .then(r => r.json())
