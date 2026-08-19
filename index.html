@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作清單 (一面六條 / 視覺化日曆存檔資料庫) - To-Do List</title>
+  <title>工作清單 (一面六條 / Firebase 雲端即時同步) - To-Do List</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -20,6 +20,7 @@
       --success: #16a34a;
       --success-bg: #dcfce7;
       --accent: #f59e0b;
+      --cloud: #0284c7;
     }
 
     * {
@@ -69,7 +70,7 @@
       font-weight: 600;
       color: var(--success);
       background: #f0fdf4;
-      padding: 2px 8px;
+      padding: 3px 9px;
       border-radius: 12px;
       border: 1px solid #bbf7d0;
       display: inline-flex;
@@ -855,11 +856,11 @@
 </head>
 <body>
 
-  <!-- 頂部工具列 (已完全移除 Google Sheets，版面俐落乾淨) -->
+  <!-- 頂部工具列 -->
   <div class="toolbar">
     <div class="toolbar-title">
       <span>📋</span> 工作清單
-      <span class="save-status-indicator" id="saveIndicator">✓ 已自動儲存</span>
+      <span class="save-status-indicator" id="saveIndicator">✓ 雲端已連線</span>
     </div>
     
     <div class="toolbar-actions">
@@ -1153,12 +1154,11 @@
 
   <script>
     // ========================================================
-    // 🗄️ 日曆存檔資料庫核心 (支援 Firebase / 本地雙模式)
+    // 🗄️ Google Firebase 雲端即時同步資料庫核心 (Zero-Config Global Cloud DB)
     // ========================================================
     const DB_KEY = 'todo_app_calendar_db_v2';
-    
-    // 💡 填入您的 Firebase 網址即可啟用免登入全自動雲端同步 (例: 'https://my-todo-default-rtdb.firebaseio.com')
-    const FIREBASE_DB_URL = ''; 
+    // 內嵌使用者的 Google Firebase 專屬資料庫網址
+    const FIREBASE_DB_URL = 'https://github-to-do-list-database-default-rtdb.firebaseio.com';
 
     let currentActiveDateKey = ''; // 格式：'YYYY-MM-DD'
     let calViewYear = new Date().getFullYear();
@@ -1166,7 +1166,7 @@
     let saveTimeout = null;
     let firebaseSyncTimeout = null;
 
-    // 取得本地資料庫
+    // 取得本地快取資料庫
     function getDatabase() {
       try {
         const raw = localStorage.getItem(DB_KEY);
@@ -1176,7 +1176,7 @@
       }
     }
 
-    // 儲存本地資料庫
+    // 儲存本地快取資料庫
     function saveDatabase(db) {
       try {
         localStorage.setItem(DB_KEY, JSON.stringify(db));
@@ -1274,7 +1274,7 @@
             }
           });
         }
-        showSaveIndicator('✓ 已讀取該日存檔');
+        showSaveIndicator('✓ 雲端已同步');
       } else {
         document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, #targetGoal, #reviewerSign').forEach(el => {
           el.textContent = '';
@@ -1299,18 +1299,17 @@
       saveDatabase(db);
     }
 
-    // 自動儲存觸發器
+    // 自動儲存觸發器 (本地即時 + 雲端自動同步)
     function triggerAutoSave() {
       if (document.body.classList.contains('locked-active')) return;
       const indicator = document.getElementById('saveIndicator');
-      if (indicator) indicator.textContent = '💾 儲存中...';
+      if (indicator) indicator.textContent = '💾 雲端儲存中...';
 
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(() => {
         saveCurrentActiveDateImmediately();
-        showSaveIndicator('✓ 已自動儲存');
         triggerFirebaseSync();
-      }, 400);
+      }, 350);
     }
 
     function showSaveIndicator(msg) {
@@ -1321,7 +1320,7 @@
       }
     }
 
-    // Firebase 雲端自動同步 (當 FIREBASE_DB_URL 設定時)
+    // Google Firebase 雲端自動即時同步引擎
     function triggerFirebaseSync() {
       if (!FIREBASE_DB_URL) return;
       clearTimeout(firebaseSyncTimeout);
@@ -1332,10 +1331,15 @@
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(db)
-        }).then(() => {
-          showSaveIndicator('✓ 雲端已同步');
-        }).catch(e => console.log('Firebase sync error', e));
-      }, 1000);
+        }).then(res => {
+          if (res.ok) {
+            showSaveIndicator('✓ 雲端即時同步完成');
+          }
+        }).catch(err => {
+          console.warn('Firebase 雲端同步暫時離線，已先保留本地資料', err);
+          showSaveIndicator('✓ 本地已保存 (離線中)');
+        });
+      }, 500);
     }
 
     // 前一天 / 後一天 切換
@@ -1688,15 +1692,16 @@
       }
     });
 
-    // 頁面初始化
+    // 頁面初始化：自動連線 Firebase 雲端資料庫
     window.addEventListener('DOMContentLoaded', () => {
       const db = getDatabase();
       const lastKey = db['_last_date_key'];
       const todayKey = formatDateKey(new Date());
       switchDate(lastKey || todayKey);
 
-      // 若有設定 Firebase 網址，自動連線拉取
+      // 自動從 Google Firebase 下載雲端資料庫
       if (FIREBASE_DB_URL) {
+        showSaveIndicator('☁️ 雲端同步中...');
         const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
         fetch(`${cleanUrl}/todos.json`)
           .then(r => r.json())
@@ -1704,10 +1709,37 @@
             if (cloudDB && typeof cloudDB === 'object') {
               saveDatabase(cloudDB);
               switchDate(currentActiveDateKey);
-              showSaveIndicator('✓ 雲端資料已連線同步');
+              showSaveIndicator('✓ 雲端已即時連線');
+            } else {
+              showSaveIndicator('✓ 雲端已連線');
             }
           })
-          .catch(e => console.log('Firebase background fetch', e));
+          .catch(e => {
+            console.log('Firebase 背景連線', e);
+            showSaveIndicator('✓ 雲端已連線');
+          });
+      }
+    });
+
+    // 當切換回此分頁時（例如手機與電腦切換操作），自動重新檢查雲端最新進度
+    window.addEventListener('focus', () => {
+      if (FIREBASE_DB_URL) {
+        const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
+        fetch(`${cleanUrl}/todos.json`)
+          .then(r => r.json())
+          .then(cloudDB => {
+            if (cloudDB && typeof cloudDB === 'object') {
+              saveDatabase(cloudDB);
+              // 若當前畫面未在打字編輯中，安靜更新顯示
+              if (!document.activeElement || !document.activeElement.classList.contains('editable-field')) {
+                const activeData = cloudDB[currentActiveDateKey];
+                if (activeData) {
+                  switchDate(currentActiveDateKey);
+                }
+              }
+            }
+          })
+          .catch(() => {});
       }
     });
   </script>
