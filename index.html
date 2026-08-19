@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作清單 (一面六條 / 密碼防護 / Firebase 雲端同步) - To-Do List</title>
+  <title>工作清單 (一面六條 / AES-256 端到端加密 / Firebase 雲端同步) - To-Do List</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1005,12 +1005,12 @@
       <div class="auth-icon-circle">🔒</div>
       <div>
         <div class="auth-title">私人工作清單</div>
-        <div class="auth-desc" style="margin-top:4px;">此清單已受密碼防護，請輸入存取密碼以解鎖並同步雲端資料庫。</div>
+        <div class="auth-desc" style="margin-top:4px;">此清單已受 AES-256 端到端加密防護，請輸入存取密碼以解密並同步資料庫。</div>
       </div>
 
       <div class="auth-input-group">
-        <input type="password" id="authPinInput" class="auth-pin-input" placeholder="••••••" maxlength="20" autofocus autocomplete="current-password">
-        <div class="auth-error-text" id="authErrorText">❌ 密碼錯誤，請重新輸入！</div>
+        <input type="password" id="authPinInput" class="auth-pin-input" placeholder="••••••" maxlength="32" autofocus autocomplete="current-password">
+        <div class="auth-error-text" id="authErrorText">❌ 密碼錯誤，無法解密資料庫！</div>
       </div>
 
       <label class="auth-remember-row">
@@ -1018,7 +1018,7 @@
         <span>在此裝置保持登入（下次免輸入）</span>
       </label>
 
-      <button type="button" class="auth-btn-submit" onclick="submitAuthPassword()">解鎖進入</button>
+      <button type="button" class="auth-btn-submit" onclick="submitAuthPassword()">解鎖並載入</button>
     </div>
   </div>
 
@@ -1026,7 +1026,7 @@
   <div class="toolbar">
     <div class="toolbar-title">
       <span>📋</span> 工作清單
-      <span class="save-status-indicator" id="saveIndicator">✓ 雲端已連線</span>
+      <span class="save-status-indicator" id="saveIndicator">🔒 加密同步中</span>
     </div>
     
     <div class="toolbar-actions">
@@ -1325,25 +1325,117 @@
 
   <script>
     // ========================================================
-    // 🔒 密碼驗證管理 (預設密碼: 720528)
+    // 🔐 Web Crypto API: 256-bit AES-GCM 端到端加密核心模組
     // ========================================================
-    const APP_PASSWORD_PIN = '720528';
-    const AUTH_STORAGE_KEY = 'todo_app_auth_token_v1';
+    const DB_KEY = 'todo_app_calendar_db_v2';
+    const FIREBASE_DB_URL = 'https://github-to-do-list-database-default-rtdb.firebaseio.com';
+    const AUTH_STORAGE_KEY = 'todo_app_auth_session_v2';
+    const CRYPTO_SALT = new Uint8Array([116, 111, 100, 111, 95, 115, 97, 108, 116, 95, 118, 50, 50, 48, 50, 54]); // 固定 Salt
+
+    let userSessionKey = ''; // 當前解鎖密碼
     let isAuthenticated = false;
 
-    function checkAuthStatus() {
-      // 支援網址參數直接解鎖 (例: ?pin=720528)
+    // 從密碼衍生 256-bit AES-GCM 金鑰 (PBKDF2 SHA-256 100,000 次疊代)
+    async function deriveAESKey(password) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        enc.encode(password),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
+      return crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: CRYPTO_SALT,
+          iterations: 100000,
+          hash: 'SHA-256'
+        },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    // 將資料庫物件加密為加密包
+    async function encryptDatabase(dataObj, password) {
+      const key = await deriveAESKey(password);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const enc = new TextEncoder();
+      const encoded = enc.encode(JSON.stringify(dataObj));
+      const cipherBuffer = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        encoded
+      );
+
+      // 轉換為 Base64 字串傳輸
+      let binaryCipher = '';
+      const cipherBytes = new Uint8Array(cipherBuffer);
+      for (let i = 0; i < cipherBytes.byteLength; i++) {
+        binaryCipher += String.fromCharCode(cipherBytes[i]);
+      }
+
+      let binaryIv = '';
+      for (let i = 0; i < iv.byteLength; i++) {
+        binaryIv += String.fromCharCode(iv[i]);
+      }
+
+      return {
+        _enc: true,
+        iv: btoa(binaryIv),
+        data: btoa(binaryCipher),
+        updatedAt: Date.now()
+      };
+    }
+
+    // 將加密包解密為原始資料庫物件
+    async function decryptDatabase(payload, password) {
+      if (!payload) return {};
+      // 若為舊版未加密格式直接相容
+      if (!payload._enc) return payload;
+
+      const key = await deriveAESKey(password);
+      const binaryIv = atob(payload.iv);
+      const iv = new Uint8Array(binaryIv.length);
+      for (let i = 0; i < binaryIv.length; i++) {
+        iv[i] = binaryIv.charCodeAt(i);
+      }
+
+      const binaryCipher = atob(payload.data);
+      const cipherBytes = new Uint8Array(binaryCipher.length);
+      for (let i = 0; i < binaryCipher.length; i++) {
+        cipherBytes[i] = binaryCipher.charCodeAt(i);
+      }
+
+      const decryptedBuffer = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        cipherBytes
+      );
+
+      const dec = new TextDecoder();
+      return JSON.parse(dec.decode(decryptedBuffer));
+    }
+
+    // ========================================================
+    // 🔒 驗證與存取控制邏輯
+    // ========================================================
+    async function checkAuthStatus() {
+      // 支援網址參數傳遞密碼 (例: ?pin=xxxxxx)
       const urlParams = new URLSearchParams(window.location.search);
       const urlPin = urlParams.get('pin');
-      if (urlPin === APP_PASSWORD_PIN) {
-        unlockApp(true);
+      if (urlPin) {
+        await attemptUnlock(urlPin, true);
         return;
       }
 
-      // 檢查 localStorage 中是否已有已認證記號
-      const storedToken = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (storedToken === btoa(APP_PASSWORD_PIN)) {
-        unlockApp(false);
+      // 檢查本機記住的密碼
+      const savedPass = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (savedPass) {
+        await attemptUnlock(savedPass, false);
       } else {
         showAuthGate();
       }
@@ -1359,45 +1451,78 @@
       }, 100);
     }
 
-    function unlockApp(remember = true) {
-      isAuthenticated = true;
-      const overlay = document.getElementById('authGateOverlay');
-      if (overlay) overlay.classList.add('unlocked');
-      const errText = document.getElementById('authErrorText');
-      if (errText) errText.classList.remove('show');
+    async function attemptUnlock(pass, remember = true) {
+      showSaveIndicator('🔐 密碼驗證解密中...');
+      try {
+        // 先嘗試從 Firebase 取得加密包測試解密
+        const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
+        const res = await fetch(`${cleanUrl}/todos.json`);
+        const cloudPayload = await res.json();
 
-      if (remember) {
-        localStorage.setItem(AUTH_STORAGE_KEY, btoa(APP_PASSWORD_PIN));
+        let decryptedDB = {};
+        if (cloudPayload) {
+          decryptedDB = await decryptDatabase(cloudPayload, pass);
+        } else {
+          // 若雲端為空，檢查本地快取解密或初始化
+          const localRaw = localStorage.getItem(DB_KEY);
+          if (localRaw) {
+            try {
+              const localPayload = JSON.parse(localRaw);
+              decryptedDB = await decryptDatabase(localPayload, pass);
+            } catch (e) {
+              decryptedDB = {};
+            }
+          }
+        }
+
+        // 解密成功，認證通過！
+        userSessionKey = pass;
+        isAuthenticated = true;
+
+        if (remember) {
+          localStorage.setItem(AUTH_STORAGE_KEY, pass);
+        }
+
+        saveDatabase(decryptedDB);
+
+        const overlay = document.getElementById('authGateOverlay');
+        if (overlay) overlay.classList.add('unlocked');
+        const errText = document.getElementById('authErrorText');
+        if (errText) errText.classList.remove('show');
+
+        initAppAfterAuth();
+        showSaveIndicator('✓ 端到端加密已連線');
+      } catch (err) {
+        console.warn('解密失敗', err);
+        isAuthenticated = false;
+        const errText = document.getElementById('authErrorText');
+        if (errText) errText.classList.add('show');
+        showSaveIndicator('❌ 密碼不正確');
+        const input = document.getElementById('authPinInput');
+        if (input) {
+          input.value = '';
+          input.focus();
+        }
       }
-
-      // 解鎖後初始化應用程式與雲端同步
-      initAppAfterAuth();
     }
 
-    function submitAuthPassword() {
+    async function submitAuthPassword() {
       const input = document.getElementById('authPinInput');
-      const errText = document.getElementById('authErrorText');
       const remember = document.getElementById('rememberAuthCheckbox').checked;
       const val = input.value.trim();
-
-      if (val === APP_PASSWORD_PIN) {
-        unlockApp(remember);
-      } else {
-        if (errText) errText.classList.add('show');
-        input.value = '';
-        input.focus();
-      }
+      if (!val) return;
+      await attemptUnlock(val, remember);
     }
 
-    // 手動重新上鎖 (登出)
     function lockAppManually() {
       localStorage.removeItem(AUTH_STORAGE_KEY);
+      userSessionKey = '';
+      isAuthenticated = false;
       const input = document.getElementById('authPinInput');
       if (input) input.value = '';
       showAuthGate();
     }
 
-    // 監聽 Enter 鍵解鎖
     document.addEventListener('DOMContentLoaded', () => {
       const pinInput = document.getElementById('authPinInput');
       if (pinInput) {
@@ -1411,18 +1536,14 @@
     });
 
     // ========================================================
-    // 🗄️ Google Firebase 雲端即時同步資料庫核心 (Zero-Config Global Cloud DB)
+    // 🗄️ 工作清單業務邏輯與雲端同步
     // ========================================================
-    const DB_KEY = 'todo_app_calendar_db_v2';
-    const FIREBASE_DB_URL = 'https://github-to-do-list-database-default-rtdb.firebaseio.com';
-
     let currentActiveDateKey = ''; // 格式：'YYYY-MM-DD'
     let calViewYear = new Date().getFullYear();
-    let calViewMonth = new Date().getMonth(); // 0-indexed
+    let calViewMonth = new Date().getMonth();
     let saveTimeout = null;
     let firebaseSyncTimeout = null;
 
-    // 取得本地快取資料庫
     function getDatabase() {
       try {
         const raw = localStorage.getItem(DB_KEY);
@@ -1432,7 +1553,6 @@
       }
     }
 
-    // 儲存本地快取資料庫
     function saveDatabase(db) {
       try {
         localStorage.setItem(DB_KEY, JSON.stringify(db));
@@ -1441,7 +1561,6 @@
       }
     }
 
-    // 格式化日期物件為 'YYYY-MM-DD'
     function formatDateKey(dateObj) {
       const yyyy = dateObj.getFullYear();
       const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -1449,7 +1568,6 @@
       return `${yyyy}-${mm}-${dd}`;
     }
 
-    // 格式化顯示字串：'YYYY/MM/DD (週X)'
     function formatDisplayDate(dateKey) {
       const parts = dateKey.split('-');
       if (parts.length !== 3) return dateKey;
@@ -1458,7 +1576,6 @@
       return `${parts[0]}/${parts[1]}/${parts[2]} (週${weekdays[d.getDay()]})`;
     }
 
-    // 取得當前畫面所有內容物件
     function getCurrentSheetData() {
       const title = document.getElementById('pageTitle').textContent.trim();
       const target = document.getElementById('targetGoal').textContent.trim();
@@ -1489,7 +1606,6 @@
       };
     }
 
-    // 載入特定日期的資料
     function switchDate(targetDateKey) {
       if (currentActiveDateKey) {
         saveCurrentActiveDateImmediately();
@@ -1530,7 +1646,7 @@
             }
           });
         }
-        showSaveIndicator('✓ 雲端已同步');
+        showSaveIndicator('✓ 雲端已同步 (AES-256)');
       } else {
         document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, #targetGoal, #reviewerSign').forEach(el => {
           el.textContent = '';
@@ -1546,7 +1662,6 @@
       saveDatabase(db);
     }
 
-    // 立即儲存當前活動日期
     function saveCurrentActiveDateImmediately() {
       if (!currentActiveDateKey) return;
       const data = getCurrentSheetData();
@@ -1555,16 +1670,15 @@
       saveDatabase(db);
     }
 
-    // 自動儲存觸發器 (本地即時 + 雲端自動同步)
     function triggerAutoSave() {
       if (!isAuthenticated || document.body.classList.contains('locked-active')) return;
       const indicator = document.getElementById('saveIndicator');
-      if (indicator) indicator.textContent = '💾 雲端儲存中...';
+      if (indicator) indicator.textContent = '🔒 加密儲存中...';
 
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(() => {
         saveCurrentActiveDateImmediately();
-        triggerFirebaseSync();
+        triggerFirebaseEncryptedSync();
       }, 350);
     }
 
@@ -1576,29 +1690,33 @@
       }
     }
 
-    // Google Firebase 雲端自動即時同步引擎
-    function triggerFirebaseSync() {
-      if (!isAuthenticated || !FIREBASE_DB_URL) return;
+    // Google Firebase AES-256 加密自動同步
+    async function triggerFirebaseEncryptedSync() {
+      if (!isAuthenticated || !userSessionKey || !FIREBASE_DB_URL) return;
       clearTimeout(firebaseSyncTimeout);
-      firebaseSyncTimeout = setTimeout(() => {
-        const db = getDatabase();
-        const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
-        fetch(`${cleanUrl}/todos.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(db)
-        }).then(res => {
+      firebaseSyncTimeout = setTimeout(async () => {
+        try {
+          const db = getDatabase();
+          // 將整份資料庫使用 AES-256 進行加密後再傳送
+          const encryptedPayload = await encryptDatabase(db, userSessionKey);
+
+          const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
+          const res = await fetch(`${cleanUrl}/todos.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(encryptedPayload)
+          });
+
           if (res.ok) {
-            showSaveIndicator('✓ 雲端即時同步完成');
+            showSaveIndicator('✓ 雲端已加密同步 (AES-256)');
           }
-        }).catch(err => {
-          console.warn('Firebase 雲端同步暫時離線，已先保留本地資料', err);
+        } catch (err) {
+          console.warn('Firebase 同步失敗', err);
           showSaveIndicator('✓ 本地已保存 (離線中)');
-        });
+        }
       }, 500);
     }
 
-    // 前一天 / 後一天 切換
     function navigateDay(offset) {
       if (!currentActiveDateKey) return;
       const parts = currentActiveDateKey.split('-');
@@ -1608,7 +1726,6 @@
       switchDate(newKey);
     }
 
-    // 手動修改文字日期
     function onDateTextManualChange(val) {
       const clean = val.replace(/\//g, '-').replace(/\(.*\)/, '').trim();
       const matched = clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
@@ -1622,9 +1739,6 @@
       }
     }
 
-    // ========================================================
-    // 📋 複製工作清單到其他日期功能
-    // ========================================================
     function openCopyDateModal() {
       document.getElementById('copySourceDateText').textContent = formatDisplayDate(currentActiveDateKey);
       const parts = currentActiveDateKey.split('-');
@@ -1698,7 +1812,7 @@
 
       db[targetDateKey] = targetData;
       saveDatabase(db);
-      triggerFirebaseSync();
+      triggerFirebaseEncryptedSync();
 
       closeCopyDateModal();
 
@@ -1710,9 +1824,6 @@
       }
     }
 
-    // ========================================================
-    // 📅 視覺化日曆視窗渲染與操作 (灰階)
-    // ========================================================
     function openCalendarModal() {
       if (currentActiveDateKey) {
         const parts = currentActiveDateKey.split('-');
@@ -1824,7 +1935,6 @@
       }
     }
 
-    // 備份匯出與匯入
     function exportDatabaseJSON() {
       const db = getDatabase();
       const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
@@ -1849,7 +1959,7 @@
             const merged = { ...currentDb, ...imported };
             saveDatabase(merged);
             renderCalendar();
-            triggerFirebaseSync();
+            triggerFirebaseEncryptedSync();
             alert('🎉 日曆資料庫還原成功！');
             if (currentActiveDateKey) {
               switchDate(currentActiveDateKey);
@@ -1865,7 +1975,6 @@
       input.value = '';
     }
 
-    // 互動控制邏輯
     function toggleCheck(el) {
       el.classList.toggle('checked');
       updateProgress();
@@ -1954,47 +2063,26 @@
       const lastKey = db['_last_date_key'];
       const todayKey = formatDateKey(new Date());
       switchDate(lastKey || todayKey);
-
-      // 自動從 Google Firebase 下載雲端資料庫
-      if (FIREBASE_DB_URL) {
-        showSaveIndicator('☁️ 雲端同步中...');
-        const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
-        fetch(`${cleanUrl}/todos.json`)
-          .then(r => r.json())
-          .then(cloudDB => {
-            if (cloudDB && typeof cloudDB === 'object') {
-              saveDatabase(cloudDB);
-              switchDate(currentActiveDateKey);
-              showSaveIndicator('✓ 雲端已即時連線');
-            } else {
-              showSaveIndicator('✓ 雲端已連線');
-            }
-          })
-          .catch(e => {
-            console.log('Firebase 背景連線', e);
-            showSaveIndicator('✓ 雲端已連線');
-          });
-      }
     }
 
     // 當切換回此分頁時，自動重新檢查雲端最新進度
-    window.addEventListener('focus', () => {
-      if (isAuthenticated && FIREBASE_DB_URL) {
-        const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
-        fetch(`${cleanUrl}/todos.json`)
-          .then(r => r.json())
-          .then(cloudDB => {
-            if (cloudDB && typeof cloudDB === 'object') {
-              saveDatabase(cloudDB);
-              if (!document.activeElement || !document.activeElement.classList.contains('editable-field')) {
-                const activeData = cloudDB[currentActiveDateKey];
-                if (activeData) {
-                  switchDate(currentActiveDateKey);
-                }
+    window.addEventListener('focus', async () => {
+      if (isAuthenticated && userSessionKey && FIREBASE_DB_URL) {
+        try {
+          const cleanUrl = FIREBASE_DB_URL.replace(/\/+$/, '');
+          const res = await fetch(`${cleanUrl}/todos.json`);
+          const cloudPayload = await res.json();
+          if (cloudPayload) {
+            const decryptedDB = await decryptDatabase(cloudPayload, userSessionKey);
+            saveDatabase(decryptedDB);
+            if (!document.activeElement || !document.activeElement.classList.contains('editable-field')) {
+              const activeData = decryptedDB[currentActiveDateKey];
+              if (activeData) {
+                switchDate(currentActiveDateKey);
               }
             }
-          })
-          .catch(() => {});
+          }
+        } catch (e) {}
       }
     });
   </script>
