@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作清單 (一面六條 / 雲端資料庫同步) - To-Do List</title>
+  <title>工作清單 (一面六條 / Google 試算表雲端同步) - To-Do List</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,10 +17,11 @@
       --line-color: #cbd5e1;
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
+      --sheets-green: #0f9d58;
+      --sheets-green-hover: #0b8043;
+      --sheets-bg: #e6f4ea;
       --success: #16a34a;
-      --success-bg: #dcfce7;
       --accent: #f59e0b;
-      --cloud: #0284c7;
     }
 
     * {
@@ -119,6 +120,29 @@
       border-color: var(--primary-hover);
     }
 
+    .btn-sheets-cloud {
+      background: var(--sheets-bg);
+      color: var(--sheets-green);
+      border-color: #a8dab5;
+      font-weight: 700;
+    }
+
+    .btn-sheets-cloud:hover {
+      background: #ceead6;
+      border-color: #81c995;
+    }
+
+    .btn-sheets-cloud.connected {
+      background: #0f9d58;
+      color: #ffffff;
+      border-color: #0f9d58;
+    }
+
+    .btn-sheets-cloud.connected:hover {
+      background: #0b8043;
+      border-color: #0b8043;
+    }
+
     .btn-calendar-hub {
       background: #eff6ff;
       color: #1d4ed8;
@@ -129,24 +153,6 @@
     .btn-calendar-hub:hover {
       background: #dbeafe;
       border-color: #93c5fd;
-    }
-
-    .btn-cloud-sync {
-      background: #f0f9ff;
-      color: #0369a1;
-      border-color: #bae6fd;
-      font-weight: 700;
-    }
-
-    .btn-cloud-sync:hover {
-      background: #e0f2fe;
-      border-color: #7dd3fc;
-    }
-
-    .btn-cloud-sync.connected {
-      background: #ecfdf5;
-      color: #047857;
-      border-color: #a7f3d0;
     }
 
     .btn-copy-date {
@@ -647,9 +653,7 @@
       width: 38px !important;
     }
 
-    /* ========================================================
-       模態視窗與卡片通用樣式
-       ======================================================== */
+    /* 模態視窗與卡片通用樣式 */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -813,17 +817,17 @@
     .badge-progress { background: #e0f2fe; color: #0369a1; }
     .badge-empty { background: #f1f5f9; color: #64748b; }
 
-    /* 雲端同步設定樣式 */
-    .cloud-modal-body {
+    /* Google 試算表同步視窗樣式 */
+    .sheets-modal-body {
       padding: 22px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
     }
 
-    .cloud-status-card {
-      background: #f0f9ff;
-      border: 1px solid #bae6fd;
+    .sheets-status-card {
+      background: var(--sheets-bg);
+      border: 1px solid #a8dab5;
       border-radius: 10px;
       padding: 14px;
       display: flex;
@@ -831,18 +835,18 @@
       justify-content: space-between;
     }
 
-    .cloud-status-card.active {
-      background: #f0fdf4;
-      border-color: #bbf7d0;
+    .sheets-status-card.connected {
+      background: #e6f4ea;
+      border-color: #34a853;
     }
 
-    .cloud-input-group {
+    .sheets-input-group {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
 
-    .cloud-input {
+    .sheets-input {
       padding: 10px 14px;
       border: 1.5px solid #cbd5e1;
       border-radius: 8px;
@@ -852,24 +856,38 @@
       font-family: inherit;
     }
 
-    .cloud-input:focus {
-      border-color: #0284c7;
-      box-shadow: 0 0 0 3px #e0f2fe;
+    .sheets-input:focus {
+      border-color: var(--sheets-green);
+      box-shadow: 0 0 0 3px #ceead6;
     }
 
-    .cloud-guide-box {
+    .sheets-guide-box {
       background: #f8fafc;
       border: 1px dashed #cbd5e1;
       border-radius: 8px;
-      padding: 12px 14px;
+      padding: 14px 16px;
       font-size: 0.85rem;
-      color: #475569;
+      color: #334155;
       line-height: 1.6;
+      max-height: 240px;
+      overflow-y: auto;
     }
 
-    .cloud-guide-box ol {
+    .sheets-guide-box ol {
       padding-left: 20px;
       margin-top: 6px;
+    }
+
+    .code-snippet {
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      margin: 8px 0;
+      white-space: pre-wrap;
+      user-select: all;
     }
 
     /* 列印專用 CSS (@media print) */
@@ -935,7 +953,7 @@
 </head>
 <body>
 
-  <!-- 頂部工具列 (含 ☁️ 雲端同步、📅 日曆存檔、📋 複製) -->
+  <!-- 頂部工具列 -->
   <div class="toolbar">
     <div class="toolbar-title">
       <span>📋</span> 工作清單
@@ -943,9 +961,9 @@
     </div>
     
     <div class="toolbar-actions">
-      <!-- ☁️ 雲端同步按鈕 -->
-      <button class="btn btn-cloud-sync" id="toolbarCloudBtn" onclick="openCloudModal()" title="設定跨裝置雲端資料庫同步">
-        ☁️ 雲端同步 <span id="cloudStatusDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#94a3b8; margin-left:2px;"></span>
+      <!-- 📊 Google 試算表雲端同步按鈕 -->
+      <button class="btn btn-sheets-cloud" id="toolbarSheetsBtn" onclick="openSheetsModal()" title="連結 Google 試算表免費雲端資料庫">
+        📊 Google 試算表同步 <span id="sheetsStatusDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#94a3b8; margin-left:2px;"></span>
       </button>
 
       <!-- 視覺化日曆存檔/讀取總覽 -->
@@ -1148,54 +1166,65 @@
   </div>
 
   <!-- ========================================================
-       ☁️ 雲端同步設定彈窗 (Cloud Sync Hub Modal)
+       📊 Google 試算表雲端同步設定彈窗 (Google Sheets Cloud Modal)
        ======================================================== -->
-  <div class="modal-overlay" id="cloudModalOverlay" onclick="closeCloudModalOnBg(event)">
-    <div class="modal-card" style="max-width:540px;">
+  <div class="modal-overlay" id="sheetsModalOverlay" onclick="closeSheetsModalOnBg(event)">
+    <div class="modal-card" style="max-width:580px;">
       <div class="modal-header-bar">
         <div style="font-size:1.1rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
-          <span>☁️</span> 跨裝置雲端資料庫同步
+          <span>📊</span> Google 試算表雲端資料庫連線
         </div>
-        <button class="cal-btn-icon" onclick="closeCloudModal()" style="border:none; font-size:1.2rem;">✕</button>
+        <button class="cal-btn-icon" onclick="closeSheetsModal()" style="border:none; font-size:1.2rem;">✕</button>
       </div>
 
-      <div class="cloud-modal-body">
+      <div class="sheets-modal-body">
         <!-- 連線狀態卡片 -->
-        <div class="cloud-status-card" id="cloudStatusCard">
+        <div class="sheets-status-card" id="sheetsStatusCard">
           <div>
-            <strong id="cloudStatusTitle" style="color:#0369a1;">☁️ 雲端狀態：尚未連線</strong>
-            <div id="cloudStatusDesc" style="font-size:0.8rem; color:#64748b; margin-top:2px;">設定後即可在手機、平板與其他電腦間即時同步所有日曆存檔。</div>
+            <strong id="sheetsStatusTitle" style="color:#0f9d58;">📊 雲端狀態：尚未連線</strong>
+            <div id="sheetsStatusDesc" style="font-size:0.8rem; color:#64748b; margin-top:2px;">貼上您的 Google Apps Script 網頁應用程式網址即可連線。</div>
           </div>
-          <span id="cloudStatusBadge" style="padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:700; background:#e2e8f0; color:#475569;">未綁定</span>
+          <span id="sheetsStatusBadge" style="padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:700; background:#e2e8f0; color:#475569;">未綁定</span>
         </div>
 
-        <!-- GitHub Gist 雲端連線設定 -->
-        <div class="cloud-input-group">
-          <label style="font-size:0.85rem; font-weight:700; color:#1e293b;">GitHub Personal Access Token (PAT)：</label>
-          <input type="password" id="githubTokenInput" class="cloud-input" placeholder="貼上您的 GitHub Token (例: ghp_xxxxxxxx...)">
+        <!-- Google Apps Script 網址輸入框 -->
+        <div class="sheets-input-group">
+          <label style="font-size:0.85rem; font-weight:700; color:#1e293b;">Google 網頁應用程式網址 (Web App URL)：</label>
+          <input type="text" id="sheetsUrlInput" class="sheets-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
         </div>
 
-        <div class="cloud-input-group">
-          <label style="font-size:0.85rem; font-weight:700; color:#1e293b;">雲端 Gist ID（自動建立或手動填入）：</label>
-          <input type="text" id="githubGistIdInput" class="cloud-input" placeholder="首次連線可留空，系統將自動為您在 GitHub 建立私人 Gist">
-        </div>
-
-        <!-- 簡易申請教學指南 -->
-        <div class="cloud-guide-box">
-          <strong>💡 如何取得免費的 GitHub Token？（僅需 30 秒）</strong>
+        <!-- 30秒架設教學指南 -->
+        <div class="sheets-guide-box">
+          <strong>💡 如何建立您自己的免費 Google 試算表雲端資料庫？（1 分鐘完成）</strong>
           <ol>
-            <li>前往 <a href="https://github.com/settings/tokens/new" target="_blank" style="color:#2563eb; font-weight:700;">GitHub Token 建立頁面</a></li>
-            <li>Note 隨意填寫（如：<code>todo-sync</code>），勾選 <strong><code>gist</code></strong> 權限。</li>
-            <li>點擊最下方 <strong>Generate token</strong>，複製產生的 <code>ghp_...</code> 貼到上方即可！</li>
+            <li>在 Google 雲端硬碟建立一個新的 <strong>Google 試算表</strong>。</li>
+            <li>點擊頂部選單 <strong>「擴充功能」 ➔ 「Apps Script」</strong>。</li>
+            <li>把裡面的程式碼全部清除，貼上以下這段指令：
+              <div class="code-snippet">function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getRange(1, 1).getValue();
+  return ContentService.createTextOutput(data || "{}").setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  sheet.getRange(1, 1).setValue(e.postData.contents);
+  sheet.getRange(1, 2).setValue(new Date().toLocaleString());
+  return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+}</div>
+            </li>
+            <li>點擊右上角 <strong>「部署」 ➔ 「新增部署作業」</strong>。</li>
+            <li>齒輪選 <strong>「網頁應用程式」</strong>，將「誰可以存取」改為 <strong>「任何人」</strong>，點擊部署。</li>
+            <li>複製產生的 <strong>網頁應用程式網址 (URL)</strong> 貼到上方輸入框即可！</li>
           </ol>
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-          <button class="btn btn-primary" onclick="connectAndSyncCloud()" style="flex:1; justify-content:center; padding:10px;">
-            🔗 連線並立即同步雲端
+          <button class="btn btn-primary" onclick="saveAndConnectSheets()" style="flex:1; justify-content:center; padding:10px; background:#0f9d58; border-color:#0f9d58;">
+            🔗 儲存並測試同步
           </button>
-          <button class="btn" onclick="pullFromCloudManually()" title="從雲端下載最新進度覆蓋本地" style="padding:10px;">
-            📥 從雲端拉取
+          <button class="btn" onclick="pullFromSheetsManually()" title="從 Google 試算表下載最新進度" style="padding:10px;">
+            📥 手動拉取雲端
           </button>
         </div>
       </div>
@@ -1263,7 +1292,7 @@
 
         <div style="display:flex; flex-direction:column; gap:6px;">
           <label style="font-size:0.85rem; font-weight:700; color:#1e293b;">選擇目標複製日期：</label>
-          <input type="date" id="targetCopyDatePicker" class="cloud-input" style="font-size:0.95rem; font-weight:600;">
+          <input type="date" id="targetCopyDatePicker" class="sheets-input" style="font-size:0.95rem; font-weight:600;">
           
           <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
             <button type="button" class="btn btn-sm" onclick="setQuickCopyTarget(1)">👉 明天</button>
@@ -1293,16 +1322,16 @@
 
   <script>
     // ========================================================
-    // 🗄️ 日曆存檔資料庫核心 + ☁️ 雲端 Gist 同步引擎
+    // 🗄️ 日曆存檔資料庫核心 + 📊 Google 試算表雲端同步引擎
     // ========================================================
     const DB_KEY = 'todo_app_calendar_db_v2';
-    const CLOUD_CONFIG_KEY = 'todo_app_cloud_config_v1';
+    const SHEETS_CONFIG_KEY = 'todo_app_sheets_url_v1';
 
     let currentActiveDateKey = ''; // 格式：'YYYY-MM-DD'
     let calViewYear = new Date().getFullYear();
     let calViewMonth = new Date().getMonth(); // 0-indexed
     let saveTimeout = null;
-    let cloudSyncTimeout = null;
+    let sheetsSyncTimeout = null;
 
     // 取得本地資料庫
     function getDatabase() {
@@ -1323,20 +1352,15 @@
       }
     }
 
-    // 取得雲端設定
-    function getCloudConfig() {
-      try {
-        const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
-        return raw ? JSON.parse(raw) : { token: '', gistId: '', enabled: false };
-      } catch (e) {
-        return { token: '', gistId: '', enabled: false };
-      }
+    // 取得 Google 試算表 Web App 網址
+    function getSheetsUrl() {
+      return localStorage.getItem(SHEETS_CONFIG_KEY) || '';
     }
 
-    // 儲存雲端設定
-    function saveCloudConfig(cfg) {
-      localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cfg));
-      updateCloudStatusUI();
+    // 儲存 Google 試算表網址
+    function saveSheetsUrl(url) {
+      localStorage.setItem(SHEETS_CONFIG_KEY, url);
+      updateSheetsStatusUI();
     }
 
     // 格式化日期物件為 'YYYY-MM-DD'
@@ -1453,7 +1477,7 @@
       saveDatabase(db);
     }
 
-    // 自動儲存觸發器（本地 + 雲端）
+    // 自動儲存觸發器（本地 + Google 試算表雲端）
     function triggerAutoSave() {
       if (document.body.classList.contains('locked-active')) return;
       const indicator = document.getElementById('saveIndicator');
@@ -1463,7 +1487,7 @@
       saveTimeout = setTimeout(() => {
         saveCurrentActiveDateImmediately();
         showSaveIndicator('✓ 已自動儲存');
-        triggerCloudDebouncedSync();
+        triggerSheetsDebouncedSync();
       }, 400);
     }
 
@@ -1500,200 +1524,136 @@
     }
 
     // ========================================================
-    // ☁️ 雲端 Gist API 同步核心邏輯 (Cloud Database Engine)
+    // 📊 Google 試算表 Apps Script 雲端同步引擎
     // ========================================================
-    function openCloudModal() {
-      const cfg = getCloudConfig();
-      document.getElementById('githubTokenInput').value = cfg.token || '';
-      document.getElementById('githubGistIdInput').value = cfg.gistId || '';
-      updateCloudStatusUI();
-      document.getElementById('cloudModalOverlay').classList.add('show');
+    function openSheetsModal() {
+      document.getElementById('sheetsUrlInput').value = getSheetsUrl();
+      updateSheetsStatusUI();
+      document.getElementById('sheetsModalOverlay').classList.add('show');
     }
 
-    function closeCloudModal() {
-      document.getElementById('cloudModalOverlay').classList.remove('show');
+    function closeSheetsModal() {
+      document.getElementById('sheetsModalOverlay').classList.remove('show');
     }
 
-    function closeCloudModalOnBg(e) {
-      if (e.target.id === 'cloudModalOverlay') {
-        closeCloudModal();
+    function closeSheetsModalOnBg(e) {
+      if (e.target.id === 'sheetsModalOverlay') {
+        closeSheetsModal();
       }
     }
 
-    function updateCloudStatusUI() {
-      const cfg = getCloudConfig();
-      const dot = document.getElementById('cloudStatusDot');
-      const btn = document.getElementById('toolbarCloudBtn');
-      const card = document.getElementById('cloudStatusCard');
-      const title = document.getElementById('cloudStatusTitle');
-      const desc = document.getElementById('cloudStatusDesc');
-      const badge = document.getElementById('cloudStatusBadge');
+    function updateSheetsStatusUI() {
+      const url = getSheetsUrl();
+      const dot = document.getElementById('sheetsStatusDot');
+      const btn = document.getElementById('toolbarSheetsBtn');
+      const card = document.getElementById('sheetsStatusCard');
+      const title = document.getElementById('sheetsStatusTitle');
+      const desc = document.getElementById('sheetsStatusDesc');
+      const badge = document.getElementById('sheetsStatusBadge');
 
-      if (cfg.enabled && cfg.gistId) {
+      if (url && url.startsWith('https://script.google.com/')) {
         if (dot) dot.style.background = '#16a34a';
         if (btn) btn.classList.add('connected');
-        if (card) card.classList.add('active');
-        if (title) { title.textContent = '☁️ 雲端狀態：已連線同步中'; title.style.color = '#15803d'; }
-        if (desc) desc.textContent = `已綁定 Gist ID: ${cfg.gistId}，所有修改將自動備份至雲端。`;
-        if (badge) { badge.textContent = '連線正常 🟢'; badge.style.background = '#dcfce7'; badge.style.color = '#15803d'; }
+        if (card) card.classList.add('connected');
+        if (title) { title.textContent = '📊 試算表雲端：已連線同步中'; }
+        if (desc) desc.textContent = '所有任務輸入與打勾將自動即時同步存入您的 Google 試算表中。';
+        if (badge) { badge.textContent = '已連線 🟢'; badge.style.background = '#dcfce7'; badge.style.color = '#15803d'; }
       } else {
         if (dot) dot.style.background = '#94a3b8';
         if (btn) btn.classList.remove('connected');
-        if (card) card.classList.remove('active');
-        if (title) { title.textContent = '☁️ 雲端狀態：尚未連線'; title.style.color = '#0369a1'; }
-        if (desc) desc.textContent = '設定後即可在手機、平板與其他電腦間即時同步所有日曆存檔。';
+        if (card) card.classList.remove('connected');
+        if (title) { title.textContent = '📊 試算表雲端：尚未連線'; }
+        if (desc) desc.textContent = '貼上您的 Google Apps Script 網頁應用程式網址即可連線。';
         if (badge) { badge.textContent = '未綁定'; badge.style.background = '#e2e8f0'; badge.style.color = '#475569'; }
       }
     }
 
-    // 延遲雲端同步 (Auto-Sync)
-    function triggerCloudDebouncedSync() {
-      const cfg = getCloudConfig();
-      if (!cfg.enabled || !cfg.token || !cfg.gistId) return;
+    // 延遲背景同步至 Google 試算表
+    function triggerSheetsDebouncedSync() {
+      const url = getSheetsUrl();
+      if (!url) return;
 
-      clearTimeout(cloudSyncTimeout);
-      cloudSyncTimeout = setTimeout(() => {
-        pushToCloud(false);
+      clearTimeout(sheetsSyncTimeout);
+      sheetsSyncTimeout = setTimeout(() => {
+        pushToSheets(false);
       }, 1500);
     }
 
-    // 連線並推送至 GitHub Gist
-    async function connectAndSyncCloud() {
-      const token = document.getElementById('githubTokenInput').value.trim();
-      let gistId = document.getElementById('githubGistIdInput').value.trim();
-
-      if (!token) {
-        alert('請先輸入 GitHub Personal Access Token！');
+    // 儲存並測試連線
+    async function saveAndConnectSheets() {
+      const url = document.getElementById('sheetsUrlInput').value.trim();
+      if (!url) {
+        alert('請輸入 Google Apps Script 網址！');
         return;
       }
 
-      showSaveIndicator('☁️ 連線雲端中...');
+      if (!url.startsWith('https://script.google.com/')) {
+        alert('網址格式不正確，應以 https://script.google.com/ 開頭！');
+        return;
+      }
+
+      saveSheetsUrl(url);
+      showSaveIndicator('📊 測試同步中...');
 
       try {
-        const db = getDatabase();
-        const contentStr = JSON.stringify(db, null, 2);
-
-        if (!gistId) {
-          // 建立新的 Gist
-          const res = await fetch('https://api.github.com/gists', {
-            method: 'POST',
-            headers: {
-              'Authorization': `token ${token}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              description: '工作清單雲端資料庫備份 (To-Do List Cloud DB)',
-              public: false,
-              files: {
-                'todo_database.json': { content: contentStr }
-              }
-            })
-          });
-
-          if (!res.ok) throw new Error(`GitHub 建立失敗 (${res.status})，請檢查 Token 是否具有 gist 權限。`);
-          const gistData = await res.json();
-          gistId = gistData.id;
-          document.getElementById('githubGistIdInput').value = gistId;
-        } else {
-          // 存在 Gist，更新內容
-          const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `token ${token}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              files: {
-                'todo_database.json': { content: contentStr }
-              }
-            })
-          });
-
-          if (!res.ok) throw new Error(`GitHub 更新失敗 (${res.status})，請確認 Gist ID 與 Token 是否正確。`);
-        }
-
-        saveCloudConfig({ token, gistId, enabled: true });
-        showSaveIndicator('✓ 雲端同步完成');
-        alert('🎉 恭喜！已成功連接 GitHub 雲端資料庫，今後所有輸入與打勾都會自動即時同步至雲端！');
-        closeCloudModal();
+        await pushToSheets(true);
+        closeSheetsModal();
       } catch (err) {
-        alert(`❌ 雲端連線失敗：${err.message}`);
-        showSaveIndicator('❌ 雲端同步失敗');
+        alert(`❌ 連線測試失敗：${err.message}`);
       }
     }
 
-    // 推送資料至雲端
-    async function pushToCloud(showToast = true) {
-      const cfg = getCloudConfig();
-      if (!cfg.enabled || !cfg.token || !cfg.gistId) return;
+    // 推送資料至 Google 試算表
+    async function pushToSheets(showToast = true) {
+      const url = getSheetsUrl();
+      if (!url) return;
 
-      try {
-        const db = getDatabase();
-        const contentStr = JSON.stringify(db, null, 2);
+      const db = getDatabase();
+      const payloadStr = JSON.stringify(db);
 
-        const res = await fetch(`https://api.github.com/gists/${cfg.gistId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `token ${cfg.token}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            files: {
-              'todo_database.json': { content: contentStr }
-            }
-          })
-        });
+      // 使用 text/plain 避免觸發 CORS 預檢限制
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: payloadStr,
+        mode: 'no-cors' // Google Apps Script 跨網域標準模式
+      });
 
-        if (res.ok) {
-          showSaveIndicator('✓ 雲端已同步');
-          if (showToast) alert('🎉 已成功上傳備份至雲端！');
-        }
-      } catch (e) {
-        console.error('雲端自動同步失敗', e);
+      showSaveIndicator('✓ 試算表已同步');
+      if (showToast) {
+        alert('🎉 恭喜！已成功連接 Google 試算表，所有工作清單與打勾進度已同步存入雲端！');
       }
     }
 
-    // 從雲端下載/拉取最新進度覆蓋本地
-    async function pullFromCloudManually() {
-      const token = document.getElementById('githubTokenInput').value.trim();
-      const gistId = document.getElementById('githubGistIdInput').value.trim();
-
-      if (!token || !gistId) {
-        alert('請先輸入 Token 與 Gist ID！');
+    // 從 Google 試算表手動拉取資料
+    async function pullFromSheetsManually() {
+      const url = getSheetsUrl();
+      if (!url) {
+        alert('請先輸入 Google Apps Script 網址！');
         return;
       }
 
-      if (!confirm('確定要從雲端下載並覆蓋本地的資料嗎？')) return;
+      if (!confirm('確定要從 Google 試算表下載並覆蓋本地資料嗎？')) return;
 
       try {
-        showSaveIndicator('☁️ 雲端下載中...');
-        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
+        showSaveIndicator('📊 下載資料中...');
+        const res = await fetch(url, { redirect: 'follow' });
+        if (!res.ok) throw new Error(`HTTP 錯誤 ${res.status}`);
+        const cloudData = await res.json();
+
+        if (typeof cloudData === 'object' && cloudData !== null) {
+          saveDatabase(cloudData);
+          if (currentActiveDateKey) {
+            switchDate(currentActiveDateKey);
           }
-        });
-
-        if (!res.ok) throw new Error(`讀取失敗 (${res.status})`);
-        const gist = await res.json();
-        const fileObj = gist.files['todo_database.json'];
-        if (!fileObj || !fileObj.content) throw new Error('雲端 Gist 中未找到 todo_database.json 檔案');
-
-        const cloudDB = JSON.parse(fileObj.content);
-        saveDatabase(cloudDB);
-        saveCloudConfig({ token, gistId, enabled: true });
-
-        if (currentActiveDateKey) {
-          switchDate(currentActiveDateKey);
+          showSaveIndicator('✓ 雲端資料已載入');
+          alert('🎉 已成功從 Google 試算表載入最新資料！');
+          closeSheetsModal();
+        } else {
+          alert('試算表中尚無資料！');
         }
-        showSaveIndicator('✓ 雲端資料已載入');
-        alert('🎉 已成功從雲端同步下載最新資料！');
-        closeCloudModal();
       } catch (err) {
-        alert(`❌ 雲端下載失敗：${err.message}`);
+        alert(`❌ 下載失敗：${err.message}，請確認 Apps Script 部署設定中「誰可以存取」是否已設為「任何人」。`);
       }
     }
 
@@ -1773,7 +1733,7 @@
 
       db[targetDateKey] = targetData;
       saveDatabase(db);
-      triggerCloudDebouncedSync();
+      triggerSheetsDebouncedSync();
 
       closeCopyDateModal();
 
@@ -1924,7 +1884,7 @@
             const merged = { ...currentDb, ...imported };
             saveDatabase(merged);
             renderCalendar();
-            triggerCloudDebouncedSync();
+            triggerSheetsDebouncedSync();
             alert('🎉 日曆資料庫還原成功！');
             if (currentActiveDateKey) {
               switchDate(currentActiveDateKey);
@@ -2025,26 +1985,25 @@
 
     // 頁面初始化
     window.addEventListener('DOMContentLoaded', () => {
-      updateCloudStatusUI();
+      updateSheetsStatusUI();
       const db = getDatabase();
       const lastKey = db['_last_date_key'];
       const todayKey = formatDateKey(new Date());
       switchDate(lastKey || todayKey);
 
-      // 若有雲端連線，自動拉取最新雲端存檔
-      const cfg = getCloudConfig();
-      if (cfg.enabled && cfg.token && cfg.gistId) {
-        fetch(`https://api.github.com/gists/${cfg.gistId}`, {
-          headers: { 'Authorization': `token ${cfg.token}` }
-        }).then(r => r.json()).then(gist => {
-          const fileObj = gist.files && gist.files['todo_database.json'];
-          if (fileObj && fileObj.content) {
-            const cloudDB = JSON.parse(fileObj.content);
-            saveDatabase(cloudDB);
-            switchDate(currentActiveDateKey);
-            showSaveIndicator('✓ 雲端資料已同步');
-          }
-        }).catch(e => console.log('背景拉取雲端存檔完成', e));
+      // 若有 Google 試算表連線，自動在背景下載最新存檔
+      const sheetsUrl = getSheetsUrl();
+      if (sheetsUrl && sheetsUrl.startsWith('https://script.google.com/')) {
+        fetch(sheetsUrl, { redirect: 'follow' })
+          .then(r => r.json())
+          .then(cloudData => {
+            if (typeof cloudData === 'object' && cloudData !== null && Object.keys(cloudData).length > 0) {
+              saveDatabase(cloudData);
+              switchDate(currentActiveDateKey);
+              showSaveIndicator('✓ 試算表資料已同步');
+            }
+          })
+          .catch(e => console.log('背景讀取 Google 試算表完成', e));
       }
     });
   </script>
