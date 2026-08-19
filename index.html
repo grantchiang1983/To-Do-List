@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>工作清單 (一面六條 / 視覺化日曆存檔資料庫) - To-Do List</title>
+  <title>工作清單 (一面六條 / 雲端資料庫同步) - To-Do List</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -20,6 +20,7 @@
       --success: #16a34a;
       --success-bg: #dcfce7;
       --accent: #f59e0b;
+      --cloud: #0284c7;
     }
 
     * {
@@ -42,7 +43,7 @@
     /* 頂部操作工具列 (列印時隱藏) */
     .toolbar {
       width: 100%;
-      max-width: 860px;
+      max-width: 880px;
       background: #ffffff;
       padding: 12px 20px;
       border-radius: 12px;
@@ -90,14 +91,14 @@
       border: 1px solid #cbd5e1;
       background: #ffffff;
       color: #334155;
-      padding: 7px 13px;
+      padding: 7px 12px;
       border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.15s ease;
       user-select: none;
     }
@@ -128,6 +129,24 @@
     .btn-calendar-hub:hover {
       background: #dbeafe;
       border-color: #93c5fd;
+    }
+
+    .btn-cloud-sync {
+      background: #f0f9ff;
+      color: #0369a1;
+      border-color: #bae6fd;
+      font-weight: 700;
+    }
+
+    .btn-cloud-sync:hover {
+      background: #e0f2fe;
+      border-color: #7dd3fc;
+    }
+
+    .btn-cloud-sync.connected {
+      background: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
     }
 
     .btn-copy-date {
@@ -190,7 +209,7 @@
     /* A4 紙張預覽容器 */
     .sheet-wrapper {
       width: 100%;
-      max-width: 860px;
+      max-width: 880px;
     }
 
     .page {
@@ -629,7 +648,7 @@
     }
 
     /* ========================================================
-       📅 視覺化日曆存檔資料庫中心 (Visual Calendar Hub Modal)
+       模態視窗與卡片通用樣式
        ======================================================== */
     .modal-overlay {
       position: fixed;
@@ -650,24 +669,10 @@
       display: flex;
     }
 
-    .calendar-modal-card {
+    .modal-card {
       background: #ffffff;
       width: 100%;
-      max-width: 680px;
-      max-height: 90vh;
       border-radius: 18px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.18);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .copy-modal-card {
-      background: #ffffff;
-      width: 100%;
-      max-width: 480px;
-      border-radius: 16px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.18);
       display: flex;
       flex-direction: column;
@@ -680,27 +685,13 @@
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    .calendar-modal-header {
+    .modal-header-bar {
       padding: 16px 22px;
       border-bottom: 1px solid #e2e8f0;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: #f8fafc;
-    }
-
-    .calendar-nav-controls {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .calendar-month-title {
-      font-size: 1.2rem;
-      font-weight: 800;
-      color: #0f172a;
-      min-width: 140px;
-      text-align: center;
     }
 
     .cal-btn-icon {
@@ -724,15 +715,7 @@
       color: #0f172a;
     }
 
-    .calendar-modal-body {
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    /* 星期標題 */
+    /* 星期與日曆格子 */
     .calendar-weekdays-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -746,10 +729,9 @@
 
     .calendar-weekdays-grid div:first-child,
     .calendar-weekdays-grid div:last-child {
-      color: #ef4444; /* 週日與週六強調色 */
+      color: #ef4444;
     }
 
-    /* 日期格子網格 */
     .calendar-days-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -767,7 +749,6 @@
       justify-content: space-between;
       background: #ffffff;
       transition: all 0.15s ease;
-      position: relative;
     }
 
     .calendar-day-cell:hover {
@@ -781,12 +762,6 @@
       opacity: 0.35;
       background: #f8fafc;
       cursor: default;
-    }
-
-    .calendar-day-cell.is-other-month:hover {
-      transform: none;
-      border-color: #e2e8f0;
-      box-shadow: none;
     }
 
     .calendar-day-cell.is-today {
@@ -834,127 +809,67 @@
       text-overflow: ellipsis;
     }
 
-    .badge-done {
-      background: #dcfce7;
-      color: #15803d;
-    }
+    .badge-done { background: #dcfce7; color: #15803d; }
+    .badge-progress { background: #e0f2fe; color: #0369a1; }
+    .badge-empty { background: #f1f5f9; color: #64748b; }
 
-    .badge-progress {
-      background: #e0f2fe;
-      color: #0369a1;
-    }
-
-    .badge-empty {
-      background: #f1f5f9;
-      color: #64748b;
-    }
-
-    /* 日曆底部圖例與匯入匯出 */
-    .calendar-modal-footer {
-      padding: 14px 20px;
-      border-top: 1px solid #e2e8f0;
-      background: #f8fafc;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .calendar-legend-guide {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.75rem;
-      color: #64748b;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 3px;
-    }
-
-    /* 複製對話框樣式 */
-    .copy-modal-body {
-      padding: 20px;
+    /* 雲端同步設定樣式 */
+    .cloud-modal-body {
+      padding: 22px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
     }
 
-    .copy-source-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 0.9rem;
-      color: #334155;
-    }
-
-    .copy-quick-tags {
+    .cloud-status-card {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 10px;
+      padding: 14px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 6px;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    .quick-tag-btn {
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      color: #334155;
+    .cloud-status-card.active {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
     }
 
-    .quick-tag-btn:hover {
-      background: #f1f5f9;
-      border-color: #94a3b8;
-    }
-
-    .copy-form-group {
+    .cloud-input-group {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
 
-    .copy-form-label {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #1e293b;
-    }
-
-    .copy-date-picker-input {
-      padding: 8px 12px;
+    .cloud-input {
+      padding: 10px 14px;
       border: 1.5px solid #cbd5e1;
       border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
+      font-size: 0.9rem;
       color: #0f172a;
       outline: none;
+      font-family: inherit;
     }
 
-    .copy-date-picker-input:focus {
-      border-color: #2563eb;
+    .cloud-input:focus {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px #e0f2fe;
     }
 
-    .copy-checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .cloud-guide-box {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 12px 14px;
       font-size: 0.85rem;
-      color: #334155;
-      cursor: pointer;
-      user-select: none;
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    .cloud-guide-box ol {
+      padding-left: 20px;
+      margin-top: 6px;
     }
 
     /* 列印專用 CSS (@media print) */
@@ -1020,7 +935,7 @@
 </head>
 <body>
 
-  <!-- 頂部工具列 (已移除「今天」按鈕，新增「📋 複製到其他日期」) -->
+  <!-- 頂部工具列 (含 ☁️ 雲端同步、📅 日曆存檔、📋 複製) -->
   <div class="toolbar">
     <div class="toolbar-title">
       <span>📋</span> 工作清單
@@ -1028,6 +943,11 @@
     </div>
     
     <div class="toolbar-actions">
+      <!-- ☁️ 雲端同步按鈕 -->
+      <button class="btn btn-cloud-sync" id="toolbarCloudBtn" onclick="openCloudModal()" title="設定跨裝置雲端資料庫同步">
+        ☁️ 雲端同步 <span id="cloudStatusDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#94a3b8; margin-left:2px;"></span>
+      </button>
+
       <!-- 視覺化日曆存檔/讀取總覽 -->
       <button class="btn btn-calendar-hub" onclick="openCalendarModal()" title="開啟視覺化日曆存檔中心">
         📅 日曆存檔中心
@@ -1228,16 +1148,69 @@
   </div>
 
   <!-- ========================================================
+       ☁️ 雲端同步設定彈窗 (Cloud Sync Hub Modal)
+       ======================================================== -->
+  <div class="modal-overlay" id="cloudModalOverlay" onclick="closeCloudModalOnBg(event)">
+    <div class="modal-card" style="max-width:540px;">
+      <div class="modal-header-bar">
+        <div style="font-size:1.1rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:8px;">
+          <span>☁️</span> 跨裝置雲端資料庫同步
+        </div>
+        <button class="cal-btn-icon" onclick="closeCloudModal()" style="border:none; font-size:1.2rem;">✕</button>
+      </div>
+
+      <div class="cloud-modal-body">
+        <!-- 連線狀態卡片 -->
+        <div class="cloud-status-card" id="cloudStatusCard">
+          <div>
+            <strong id="cloudStatusTitle" style="color:#0369a1;">☁️ 雲端狀態：尚未連線</strong>
+            <div id="cloudStatusDesc" style="font-size:0.8rem; color:#64748b; margin-top:2px;">設定後即可在手機、平板與其他電腦間即時同步所有日曆存檔。</div>
+          </div>
+          <span id="cloudStatusBadge" style="padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:700; background:#e2e8f0; color:#475569;">未綁定</span>
+        </div>
+
+        <!-- GitHub Gist 雲端連線設定 -->
+        <div class="cloud-input-group">
+          <label style="font-size:0.85rem; font-weight:700; color:#1e293b;">GitHub Personal Access Token (PAT)：</label>
+          <input type="password" id="githubTokenInput" class="cloud-input" placeholder="貼上您的 GitHub Token (例: ghp_xxxxxxxx...)">
+        </div>
+
+        <div class="cloud-input-group">
+          <label style="font-size:0.85rem; font-weight:700; color:#1e293b;">雲端 Gist ID（自動建立或手動填入）：</label>
+          <input type="text" id="githubGistIdInput" class="cloud-input" placeholder="首次連線可留空，系統將自動為您在 GitHub 建立私人 Gist">
+        </div>
+
+        <!-- 簡易申請教學指南 -->
+        <div class="cloud-guide-box">
+          <strong>💡 如何取得免費的 GitHub Token？（僅需 30 秒）</strong>
+          <ol>
+            <li>前往 <a href="https://github.com/settings/tokens/new" target="_blank" style="color:#2563eb; font-weight:700;">GitHub Token 建立頁面</a></li>
+            <li>Note 隨意填寫（如：<code>todo-sync</code>），勾選 <strong><code>gist</code></strong> 權限。</li>
+            <li>點擊最下方 <strong>Generate token</strong>，複製產生的 <code>ghp_...</code> 貼到上方即可！</li>
+          </ol>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <button class="btn btn-primary" onclick="connectAndSyncCloud()" style="flex:1; justify-content:center; padding:10px;">
+            🔗 連線並立即同步雲端
+          </button>
+          <button class="btn" onclick="pullFromCloudManually()" title="從雲端下載最新進度覆蓋本地" style="padding:10px;">
+            📥 從雲端拉取
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
        📅 視覺化日曆存檔與讀取資料庫彈窗 (Visual Calendar Hub)
        ======================================================== -->
   <div class="modal-overlay" id="calendarModalOverlay" onclick="closeCalendarOnBg(event)">
-    <div class="calendar-modal-card">
-      
-      <!-- 日曆頁首導覽 -->
-      <div class="calendar-modal-header">
-        <div class="calendar-nav-controls">
+    <div class="modal-card" style="max-width:680px; max-height:90vh;">
+      <div class="modal-header-bar">
+        <div style="display:flex; align-items:center; gap:12px;">
           <button class="cal-btn-icon" onclick="changeMonth(-1)" title="上個月">◀</button>
-          <div class="calendar-month-title" id="calendarMonthTitle">2026年 8月</div>
+          <div style="font-size:1.2rem; font-weight:800; color:#0f172a; min-width:140px; text-align:center;" id="calendarMonthTitle">2026年 8月</div>
           <button class="cal-btn-icon" onclick="changeMonth(1)" title="下個月">▶</button>
           <button class="btn btn-sm" onclick="jumpToCalendarToday()" style="padding:4px 10px; font-size:0.8rem;">
             今天
@@ -1246,50 +1219,27 @@
         <button class="cal-btn-icon" onclick="closeCalendarModal()" style="border:none; font-size:1.2rem;">✕</button>
       </div>
 
-      <!-- 日曆網格主體 -->
-      <div class="calendar-modal-body">
+      <div style="padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:16px;">
         <div class="calendar-weekdays-grid">
-          <div>週日</div>
-          <div>週一</div>
-          <div>週二</div>
-          <div>週三</div>
-          <div>週四</div>
-          <div>週五</div>
-          <div>週六</div>
+          <div>週日</div><div>週一</div><div>週二</div><div>週三</div><div>週四</div><div>週五</div><div>週六</div>
         </div>
-        <div class="calendar-days-grid" id="calendarDaysGrid">
-          <!-- 動態生成每月天數與存檔進度 -->
-        </div>
+        <div class="calendar-days-grid" id="calendarDaysGrid"></div>
       </div>
 
-      <!-- 日曆頁尾圖例與備份功能 -->
-      <div class="calendar-modal-footer">
-        <div class="calendar-legend-guide">
-          <div class="legend-item">
-            <span class="legend-dot" style="background:#dcfce7; border:1px solid #86efac;"></span>
-            <span>已全部完成 (6/6)</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot" style="background:#e0f2fe; border:1px solid #7dd3fc;"></span>
-            <span>進行中存檔</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot" style="background:#f1f5f9; border:1px solid #cbd5e1;"></span>
-            <span>無紀錄 / 建立新清單</span>
-          </div>
+      <div style="padding:14px 20px; border-top:1px solid #e2e8f0; background:#f8fafc; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:12px; font-size:0.75rem; color:#64748b;">
+          <div style="display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; border-radius:3px; background:#dcfce7; border:1px solid #86efac;"></span>已完成 (6/6)</div>
+          <div style="display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; border-radius:3px; background:#e0f2fe; border:1px solid #7dd3fc;"></span>進行中</div>
+          <div style="display:flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; border-radius:3px; background:#f1f5f9; border:1px solid #cbd5e1;"></span>無紀錄</div>
         </div>
-
         <div style="display:flex; gap:8px;">
-          <button class="btn btn-sm" onclick="exportDatabaseJSON()" title="備份所有歷史存檔">
-            📤 備份匯出
-          </button>
-          <label class="btn btn-sm" style="cursor:pointer;" title="匯入備份檔案">
+          <button class="btn btn-sm" onclick="exportDatabaseJSON()">📤 備份匯出</button>
+          <label class="btn btn-sm" style="cursor:pointer;">
             📥 還原匯入
             <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importDatabaseJSON(this)">
           </label>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -1297,44 +1247,44 @@
        📋 複製工作清單到其他日期對話框 (Copy Date Modal)
        ======================================================== -->
   <div class="modal-overlay" id="copyDateModalOverlay" onclick="closeCopyModalOnBg(event)">
-    <div class="copy-modal-card">
-      <div class="calendar-modal-header">
+    <div class="modal-card" style="max-width:480px;">
+      <div class="modal-header-bar">
         <div style="font-size:1.1rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
           <span>📋</span> 複製工作清單到其他日期
         </div>
         <button class="cal-btn-icon" onclick="closeCopyDateModal()" style="border:none; font-size:1.2rem;">✕</button>
       </div>
 
-      <div class="copy-modal-body">
-        <div class="copy-source-box">
+      <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; font-size:0.9rem; color:#334155;">
           <strong>來源日期：</strong><span id="copySourceDateText">2026/08/19</span>
           <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">將會複製當前所有 6 條工作事項、補充筆記與備忘內容。</div>
         </div>
 
-        <div class="copy-form-group">
-          <label class="copy-form-label">選擇目標複製日期：</label>
-          <input type="date" id="targetCopyDatePicker" class="copy-date-picker-input">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:0.85rem; font-weight:700; color:#1e293b;">選擇目標複製日期：</label>
+          <input type="date" id="targetCopyDatePicker" class="cloud-input" style="font-size:0.95rem; font-weight:600;">
           
-          <div class="copy-quick-tags">
-            <button type="button" class="quick-tag-btn" onclick="setQuickCopyTarget(1)">👉 明天</button>
-            <button type="button" class="quick-tag-btn" onclick="setQuickCopyTarget(2)">👉 後天</button>
-            <button type="button" class="quick-tag-btn" onclick="setQuickCopyTargetNextMonday()">👉 下週一</button>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+            <button type="button" class="btn btn-sm" onclick="setQuickCopyTarget(1)">👉 明天</button>
+            <button type="button" class="btn btn-sm" onclick="setQuickCopyTarget(2)">👉 後天</button>
+            <button type="button" class="btn btn-sm" onclick="setQuickCopyTargetNextMonday()">👉 下週一</button>
           </div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px; padding-top:4px;">
-          <label class="copy-checkbox-label">
+          <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#334155; cursor:pointer;">
             <input type="checkbox" id="resetChecksOnCopy" checked style="accent-color:#2563eb; width:16px; height:16px;">
-            <span>重置勾選方格（新日期將方格清空為未完成，推薦）</span>
+            <span>重置勾選方格（新日期方格清空為未完成，推薦）</span>
           </label>
-          <label class="copy-checkbox-label">
+          <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#334155; cursor:pointer;">
             <input type="checkbox" id="autoSwitchOnCopy" checked style="accent-color:#2563eb; width:16px; height:16px;">
             <span>複製完成後立即切換並跳轉至該日期</span>
           </label>
         </div>
       </div>
 
-      <div class="calendar-modal-footer" style="justify-content:flex-end;">
+      <div style="padding:14px 20px; border-top:1px solid #e2e8f0; background:#f8fafc; display:flex; justify-content:flex-end; gap:8px;">
         <button class="btn" onclick="closeCopyDateModal()">取消</button>
         <button class="btn btn-primary" onclick="executeCopySheet()">確定複製</button>
       </div>
@@ -1343,15 +1293,18 @@
 
   <script>
     // ========================================================
-    // 🗄️ 日曆存檔資料庫核心 (Calendar-driven DB Engine)
+    // 🗄️ 日曆存檔資料庫核心 + ☁️ 雲端 Gist 同步引擎
     // ========================================================
     const DB_KEY = 'todo_app_calendar_db_v2';
+    const CLOUD_CONFIG_KEY = 'todo_app_cloud_config_v1';
+
     let currentActiveDateKey = ''; // 格式：'YYYY-MM-DD'
     let calViewYear = new Date().getFullYear();
     let calViewMonth = new Date().getMonth(); // 0-indexed
     let saveTimeout = null;
+    let cloudSyncTimeout = null;
 
-    // 取得資料庫
+    // 取得本地資料庫
     function getDatabase() {
       try {
         const raw = localStorage.getItem(DB_KEY);
@@ -1361,13 +1314,29 @@
       }
     }
 
-    // 儲存資料庫
+    // 儲存本地資料庫
     function saveDatabase(db) {
       try {
         localStorage.setItem(DB_KEY, JSON.stringify(db));
       } catch (e) {
         console.error('資料庫儲存失敗', e);
       }
+    }
+
+    // 取得雲端設定
+    function getCloudConfig() {
+      try {
+        const raw = localStorage.getItem(CLOUD_CONFIG_KEY);
+        return raw ? JSON.parse(raw) : { token: '', gistId: '', enabled: false };
+      } catch (e) {
+        return { token: '', gistId: '', enabled: false };
+      }
+    }
+
+    // 儲存雲端設定
+    function saveCloudConfig(cfg) {
+      localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cfg));
+      updateCloudStatusUI();
     }
 
     // 格式化日期物件為 'YYYY-MM-DD'
@@ -1418,9 +1387,8 @@
       };
     }
 
-    // 載入特定日期的資料（若無存檔則建立空白清單）
+    // 載入特定日期的資料
     function switchDate(targetDateKey) {
-      // 先儲存當前正在編輯的日期
       if (currentActiveDateKey) {
         saveCurrentActiveDateImmediately();
       }
@@ -1429,11 +1397,9 @@
       const db = getDatabase();
       const existingData = db[targetDateKey];
 
-      // 更新日期輸入框顯示
       document.getElementById('dateTextInput').value = formatDisplayDate(targetDateKey);
 
       if (existingData) {
-        // 讀取既有存檔
         document.getElementById('pageTitle').textContent = existingData.title || '每日工作清單';
         document.getElementById('targetGoal').textContent = existingData.target || '';
         document.getElementById('memoContent').textContent = existingData.memo || '';
@@ -1464,7 +1430,6 @@
         }
         showSaveIndicator('✓ 已讀取該日存檔');
       } else {
-        // 全新日期的空白清單
         document.querySelectorAll('.task-input, .task-subline, .task-note-input, .memo-content, #targetGoal, #reviewerSign').forEach(el => {
           el.textContent = '';
         });
@@ -1475,7 +1440,6 @@
       }
 
       updateProgress();
-      // 記錄最後檢視的日期
       db['_last_date_key'] = targetDateKey;
       saveDatabase(db);
     }
@@ -1489,7 +1453,7 @@
       saveDatabase(db);
     }
 
-    // 自動儲存觸發器
+    // 自動儲存觸發器（本地 + 雲端）
     function triggerAutoSave() {
       if (document.body.classList.contains('locked-active')) return;
       const indicator = document.getElementById('saveIndicator');
@@ -1499,6 +1463,7 @@
       saveTimeout = setTimeout(() => {
         saveCurrentActiveDateImmediately();
         showSaveIndicator('✓ 已自動儲存');
+        triggerCloudDebouncedSync();
       }, 400);
     }
 
@@ -1535,17 +1500,212 @@
     }
 
     // ========================================================
-    // 📋 複製工作清單到其他日期功能 (Copy Sheet to Other Date)
+    // ☁️ 雲端 Gist API 同步核心邏輯 (Cloud Database Engine)
+    // ========================================================
+    function openCloudModal() {
+      const cfg = getCloudConfig();
+      document.getElementById('githubTokenInput').value = cfg.token || '';
+      document.getElementById('githubGistIdInput').value = cfg.gistId || '';
+      updateCloudStatusUI();
+      document.getElementById('cloudModalOverlay').classList.add('show');
+    }
+
+    function closeCloudModal() {
+      document.getElementById('cloudModalOverlay').classList.remove('show');
+    }
+
+    function closeCloudModalOnBg(e) {
+      if (e.target.id === 'cloudModalOverlay') {
+        closeCloudModal();
+      }
+    }
+
+    function updateCloudStatusUI() {
+      const cfg = getCloudConfig();
+      const dot = document.getElementById('cloudStatusDot');
+      const btn = document.getElementById('toolbarCloudBtn');
+      const card = document.getElementById('cloudStatusCard');
+      const title = document.getElementById('cloudStatusTitle');
+      const desc = document.getElementById('cloudStatusDesc');
+      const badge = document.getElementById('cloudStatusBadge');
+
+      if (cfg.enabled && cfg.gistId) {
+        if (dot) dot.style.background = '#16a34a';
+        if (btn) btn.classList.add('connected');
+        if (card) card.classList.add('active');
+        if (title) { title.textContent = '☁️ 雲端狀態：已連線同步中'; title.style.color = '#15803d'; }
+        if (desc) desc.textContent = `已綁定 Gist ID: ${cfg.gistId}，所有修改將自動備份至雲端。`;
+        if (badge) { badge.textContent = '連線正常 🟢'; badge.style.background = '#dcfce7'; badge.style.color = '#15803d'; }
+      } else {
+        if (dot) dot.style.background = '#94a3b8';
+        if (btn) btn.classList.remove('connected');
+        if (card) card.classList.remove('active');
+        if (title) { title.textContent = '☁️ 雲端狀態：尚未連線'; title.style.color = '#0369a1'; }
+        if (desc) desc.textContent = '設定後即可在手機、平板與其他電腦間即時同步所有日曆存檔。';
+        if (badge) { badge.textContent = '未綁定'; badge.style.background = '#e2e8f0'; badge.style.color = '#475569'; }
+      }
+    }
+
+    // 延遲雲端同步 (Auto-Sync)
+    function triggerCloudDebouncedSync() {
+      const cfg = getCloudConfig();
+      if (!cfg.enabled || !cfg.token || !cfg.gistId) return;
+
+      clearTimeout(cloudSyncTimeout);
+      cloudSyncTimeout = setTimeout(() => {
+        pushToCloud(false);
+      }, 1500);
+    }
+
+    // 連線並推送至 GitHub Gist
+    async function connectAndSyncCloud() {
+      const token = document.getElementById('githubTokenInput').value.trim();
+      let gistId = document.getElementById('githubGistIdInput').value.trim();
+
+      if (!token) {
+        alert('請先輸入 GitHub Personal Access Token！');
+        return;
+      }
+
+      showSaveIndicator('☁️ 連線雲端中...');
+
+      try {
+        const db = getDatabase();
+        const contentStr = JSON.stringify(db, null, 2);
+
+        if (!gistId) {
+          // 建立新的 Gist
+          const res = await fetch('https://api.github.com/gists', {
+            method: 'POST',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              description: '工作清單雲端資料庫備份 (To-Do List Cloud DB)',
+              public: false,
+              files: {
+                'todo_database.json': { content: contentStr }
+              }
+            })
+          });
+
+          if (!res.ok) throw new Error(`GitHub 建立失敗 (${res.status})，請檢查 Token 是否具有 gist 權限。`);
+          const gistData = await res.json();
+          gistId = gistData.id;
+          document.getElementById('githubGistIdInput').value = gistId;
+        } else {
+          // 存在 Gist，更新內容
+          const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              files: {
+                'todo_database.json': { content: contentStr }
+              }
+            })
+          });
+
+          if (!res.ok) throw new Error(`GitHub 更新失敗 (${res.status})，請確認 Gist ID 與 Token 是否正確。`);
+        }
+
+        saveCloudConfig({ token, gistId, enabled: true });
+        showSaveIndicator('✓ 雲端同步完成');
+        alert('🎉 恭喜！已成功連接 GitHub 雲端資料庫，今後所有輸入與打勾都會自動即時同步至雲端！');
+        closeCloudModal();
+      } catch (err) {
+        alert(`❌ 雲端連線失敗：${err.message}`);
+        showSaveIndicator('❌ 雲端同步失敗');
+      }
+    }
+
+    // 推送資料至雲端
+    async function pushToCloud(showToast = true) {
+      const cfg = getCloudConfig();
+      if (!cfg.enabled || !cfg.token || !cfg.gistId) return;
+
+      try {
+        const db = getDatabase();
+        const contentStr = JSON.stringify(db, null, 2);
+
+        const res = await fetch(`https://api.github.com/gists/${cfg.gistId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `token ${cfg.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            files: {
+              'todo_database.json': { content: contentStr }
+            }
+          })
+        });
+
+        if (res.ok) {
+          showSaveIndicator('✓ 雲端已同步');
+          if (showToast) alert('🎉 已成功上傳備份至雲端！');
+        }
+      } catch (e) {
+        console.error('雲端自動同步失敗', e);
+      }
+    }
+
+    // 從雲端下載/拉取最新進度覆蓋本地
+    async function pullFromCloudManually() {
+      const token = document.getElementById('githubTokenInput').value.trim();
+      const gistId = document.getElementById('githubGistIdInput').value.trim();
+
+      if (!token || !gistId) {
+        alert('請先輸入 Token 與 Gist ID！');
+        return;
+      }
+
+      if (!confirm('確定要從雲端下載並覆蓋本地的資料嗎？')) return;
+
+      try {
+        showSaveIndicator('☁️ 雲端下載中...');
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!res.ok) throw new Error(`讀取失敗 (${res.status})`);
+        const gist = await res.json();
+        const fileObj = gist.files['todo_database.json'];
+        if (!fileObj || !fileObj.content) throw new Error('雲端 Gist 中未找到 todo_database.json 檔案');
+
+        const cloudDB = JSON.parse(fileObj.content);
+        saveDatabase(cloudDB);
+        saveCloudConfig({ token, gistId, enabled: true });
+
+        if (currentActiveDateKey) {
+          switchDate(currentActiveDateKey);
+        }
+        showSaveIndicator('✓ 雲端資料已載入');
+        alert('🎉 已成功從雲端同步下載最新資料！');
+        closeCloudModal();
+      } catch (err) {
+        alert(`❌ 雲端下載失敗：${err.message}`);
+      }
+    }
+
+    // ========================================================
+    // 📋 複製工作清單到其他日期功能
     // ========================================================
     function openCopyDateModal() {
       document.getElementById('copySourceDateText').textContent = formatDisplayDate(currentActiveDateKey);
-      
-      // 預設將目標日期設為明天
       const parts = currentActiveDateKey.split('-');
       const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
       d.setDate(d.getDate() + 1);
       document.getElementById('targetCopyDatePicker').value = formatDateKey(d);
-
       document.getElementById('copyDateModalOverlay').classList.add('show');
     }
 
@@ -1559,7 +1719,6 @@
       }
     }
 
-    // 快捷設定目標日期 (明天/後天)
     function setQuickCopyTarget(offsetDays) {
       const parts = currentActiveDateKey.split('-');
       const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
@@ -1567,17 +1726,15 @@
       document.getElementById('targetCopyDatePicker').value = formatDateKey(d);
     }
 
-    // 快捷設定下週一
     function setQuickCopyTargetNextMonday() {
       const parts = currentActiveDateKey.split('-');
       const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
       const day = d.getDay();
-      const diff = (day === 0 ? 1 : 8 - day); // 天數差到下週一
+      const diff = (day === 0 ? 1 : 8 - day);
       d.setDate(d.getDate() + diff);
       document.getElementById('targetCopyDatePicker').value = formatDateKey(d);
     }
 
-    // 執行複製
     function executeCopySheet() {
       const targetDateKey = document.getElementById('targetCopyDatePicker').value;
       if (!targetDateKey) {
@@ -1593,18 +1750,15 @@
       const resetChecks = document.getElementById('resetChecksOnCopy').checked;
       const autoSwitch = document.getElementById('autoSwitchOnCopy').checked;
 
-      // 取得當前清單資料
       const sourceData = getCurrentSheetData();
       const db = getDatabase();
 
-      // 若目標日期已存在資料，提示確認
       if (db[targetDateKey]) {
         if (!confirm(`目標日期「${formatDisplayDate(targetDateKey)}」已有工作清單，確定要以目前的內容覆蓋嗎？`)) {
           return;
         }
       }
 
-      // 深拷貝並建立目標日期資料
       const targetData = JSON.parse(JSON.stringify(sourceData));
       targetData.dateKey = targetDateKey;
       targetData.displayDate = formatDisplayDate(targetDateKey);
@@ -1617,9 +1771,9 @@
         });
       }
 
-      // 儲存至資料庫
       db[targetDateKey] = targetData;
       saveDatabase(db);
+      triggerCloudDebouncedSync();
 
       closeCopyDateModal();
 
@@ -1632,7 +1786,7 @@
     }
 
     // ========================================================
-    // 📅 視覺化日曆視窗渲染與操作 (Visual Calendar UI)
+    // 📅 視覺化日曆視窗渲染與操作
     // ========================================================
     function openCalendarModal() {
       if (currentActiveDateKey) {
@@ -1673,7 +1827,6 @@
       renderCalendar();
     }
 
-    // 渲染整個月份日曆格子
     function renderCalendar() {
       const titleEl = document.getElementById('calendarMonthTitle');
       titleEl.textContent = `${calViewYear} 年 ${calViewMonth + 1} 月`;
@@ -1684,13 +1837,11 @@
       const db = getDatabase();
       const todayKey = formatDateKey(new Date());
 
-      // 當月第一天與最後一天
       const firstDay = new Date(calViewYear, calViewMonth, 1);
       const lastDay = new Date(calViewYear, calViewMonth + 1, 0);
       const daysInMonth = lastDay.getDate();
-      const startDayOfWeek = firstDay.getDay(); // 0 (Sun) to 6 (Sat)
+      const startDayOfWeek = firstDay.getDay();
 
-      // 上個月的補齊天數
       const prevMonthLastDay = new Date(calViewYear, calViewMonth, 0).getDate();
       for (let i = startDayOfWeek - 1; i >= 0; i--) {
         const d = prevMonthLastDay - i;
@@ -1700,7 +1851,6 @@
         gridEl.appendChild(cell);
       }
 
-      // 當月的所有天數
       for (let day = 1; day <= daysInMonth; day++) {
         const mm = String(calViewMonth + 1).padStart(2, '0');
         const dd = String(day).padStart(2, '0');
@@ -1712,7 +1862,6 @@
         if (dateKey === todayKey) cell.classList.add('is-today');
         if (dateKey === currentActiveDateKey) cell.classList.add('is-current-active');
 
-        // 檢查是否有存檔
         const record = db[dateKey];
         let badgeHtml = '';
         let dotHtml = '';
@@ -1741,7 +1890,6 @@
           ${badgeHtml}
         `;
 
-        // 點選該天立即讀取該日清單
         cell.onclick = () => {
           switchDate(dateKey);
           closeCalendarModal();
@@ -1751,9 +1899,7 @@
       }
     }
 
-    // ========================================================
-    // 📤 備份匯出與匯入功能
-    // ========================================================
+    // 備份匯出與匯入
     function exportDatabaseJSON() {
       const db = getDatabase();
       const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
@@ -1778,6 +1924,7 @@
             const merged = { ...currentDb, ...imported };
             saveDatabase(merged);
             renderCalendar();
+            triggerCloudDebouncedSync();
             alert('🎉 日曆資料庫還原成功！');
             if (currentActiveDateKey) {
               switchDate(currentActiveDateKey);
@@ -1793,18 +1940,13 @@
       input.value = '';
     }
 
-    // ========================================================
-    // 互動控制邏輯 (打勾、進度、鎖定、清空等)
-    // ========================================================
-
-    // 點選打勾切換
+    // 互動控制邏輯
     function toggleCheck(el) {
       el.classList.toggle('checked');
       updateProgress();
       triggerAutoSave();
     }
 
-    // 更新完成進度
     function updateProgress() {
       const rows = document.querySelectorAll('.task-row');
       let completedCount = 0;
@@ -1820,7 +1962,6 @@
       }
     }
 
-    // 🔒 鎖定 / 解鎖功能
     function setLockState(isLocked) {
       const body = document.body;
       const editableFields = document.querySelectorAll('.editable-field');
@@ -1849,7 +1990,6 @@
       }
     }
 
-    // 切換單 / 雙空白方格模式
     function toggleBoxMode(mode, triggerSave = true) {
       const container = document.getElementById('sheetContainer');
       if (mode === 'single') {
@@ -1860,7 +2000,6 @@
       if (triggerSave) triggerAutoSave();
     }
 
-    // 清空內容
     function clearAllContent() {
       if (document.body.classList.contains('locked-active')) {
         alert('目前清單已鎖定，請先解除鎖定後再清空！');
@@ -1878,7 +2017,6 @@
       }
     }
 
-    // 監聽所有輸入，即時自動儲存到當日資料庫
     document.addEventListener('input', function(e) {
       if (e.target.classList.contains('editable-field')) {
         triggerAutoSave();
@@ -1887,10 +2025,27 @@
 
     // 頁面初始化
     window.addEventListener('DOMContentLoaded', () => {
+      updateCloudStatusUI();
       const db = getDatabase();
       const lastKey = db['_last_date_key'];
       const todayKey = formatDateKey(new Date());
       switchDate(lastKey || todayKey);
+
+      // 若有雲端連線，自動拉取最新雲端存檔
+      const cfg = getCloudConfig();
+      if (cfg.enabled && cfg.token && cfg.gistId) {
+        fetch(`https://api.github.com/gists/${cfg.gistId}`, {
+          headers: { 'Authorization': `token ${cfg.token}` }
+        }).then(r => r.json()).then(gist => {
+          const fileObj = gist.files && gist.files['todo_database.json'];
+          if (fileObj && fileObj.content) {
+            const cloudDB = JSON.parse(fileObj.content);
+            saveDatabase(cloudDB);
+            switchDate(currentActiveDateKey);
+            showSaveIndicator('✓ 雲端資料已同步');
+          }
+        }).catch(e => console.log('背景拉取雲端存檔完成', e));
+      }
     });
   </script>
 </body>
