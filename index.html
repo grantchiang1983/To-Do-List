@@ -130,6 +130,18 @@
       border-color: #93c5fd;
     }
 
+    .btn-copy-date {
+      background: #fdf4ff;
+      color: #a21caf;
+      border-color: #f0abfc;
+      font-weight: 700;
+    }
+
+    .btn-copy-date:hover {
+      background: #fae8ff;
+      border-color: #e879f9;
+    }
+
     .select-style {
       padding: 7px 10px;
       border-radius: 8px;
@@ -651,6 +663,18 @@
       animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    .copy-modal-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.18);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
     @keyframes modalPopIn {
       from { opacity: 0; transform: translateY(16px) scale(0.96); }
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -857,6 +881,82 @@
       border-radius: 3px;
     }
 
+    /* 複製對話框樣式 */
+    .copy-modal-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .copy-source-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      color: #334155;
+    }
+
+    .copy-quick-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .quick-tag-btn {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #334155;
+    }
+
+    .quick-tag-btn:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .copy-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .copy-form-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .copy-date-picker-input {
+      padding: 8px 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0f172a;
+      outline: none;
+    }
+
+    .copy-date-picker-input:focus {
+      border-color: #2563eb;
+    }
+
+    .copy-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: #334155;
+      cursor: pointer;
+      user-select: none;
+    }
+
     /* 列印專用 CSS (@media print) */
     @media print {
       body {
@@ -920,7 +1020,7 @@
 </head>
 <body>
 
-  <!-- 頂部工具列 -->
+  <!-- 頂部工具列 (已移除「今天」按鈕，新增「📋 複製到其他日期」) -->
   <div class="toolbar">
     <div class="toolbar-title">
       <span>📋</span> 工作清單
@@ -933,9 +1033,9 @@
         📅 日曆存檔中心
       </button>
 
-      <!-- 快速切換到今天 -->
-      <button class="btn" onclick="goToToday()" title="回到今天的清單">
-        ☀️ 今天
+      <!-- 📋 複製工作清單到其他日期 -->
+      <button class="btn btn-copy-date" onclick="openCopyDateModal()" title="將目前的工作清單內容複製到其他指定日期">
+        📋 複製到其他日期
       </button>
 
       <!-- 鎖定控制開關 -->
@@ -1193,6 +1293,54 @@
     </div>
   </div>
 
+  <!-- ========================================================
+       📋 複製工作清單到其他日期對話框 (Copy Date Modal)
+       ======================================================== -->
+  <div class="modal-overlay" id="copyDateModalOverlay" onclick="closeCopyModalOnBg(event)">
+    <div class="copy-modal-card">
+      <div class="calendar-modal-header">
+        <div style="font-size:1.1rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
+          <span>📋</span> 複製工作清單到其他日期
+        </div>
+        <button class="cal-btn-icon" onclick="closeCopyDateModal()" style="border:none; font-size:1.2rem;">✕</button>
+      </div>
+
+      <div class="copy-modal-body">
+        <div class="copy-source-box">
+          <strong>來源日期：</strong><span id="copySourceDateText">2026/08/19</span>
+          <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">將會複製當前所有 6 條工作事項、補充筆記與備忘內容。</div>
+        </div>
+
+        <div class="copy-form-group">
+          <label class="copy-form-label">選擇目標複製日期：</label>
+          <input type="date" id="targetCopyDatePicker" class="copy-date-picker-input">
+          
+          <div class="copy-quick-tags">
+            <button type="button" class="quick-tag-btn" onclick="setQuickCopyTarget(1)">👉 明天</button>
+            <button type="button" class="quick-tag-btn" onclick="setQuickCopyTarget(2)">👉 後天</button>
+            <button type="button" class="quick-tag-btn" onclick="setQuickCopyTargetNextMonday()">👉 下週一</button>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; padding-top:4px;">
+          <label class="copy-checkbox-label">
+            <input type="checkbox" id="resetChecksOnCopy" checked style="accent-color:#2563eb; width:16px; height:16px;">
+            <span>重置勾選方格（新日期將方格清空為未完成，推薦）</span>
+          </label>
+          <label class="copy-checkbox-label">
+            <input type="checkbox" id="autoSwitchOnCopy" checked style="accent-color:#2563eb; width:16px; height:16px;">
+            <span>複製完成後立即切換並跳轉至該日期</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="calendar-modal-footer" style="justify-content:flex-end;">
+        <button class="btn" onclick="closeCopyDateModal()">取消</button>
+        <button class="btn btn-primary" onclick="executeCopySheet()">確定複製</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ========================================================
     // 🗄️ 日曆存檔資料庫核心 (Calendar-driven DB Engine)
@@ -1372,12 +1520,6 @@
       switchDate(newKey);
     }
 
-    // 回到今天
-    function goToToday() {
-      const todayKey = formatDateKey(new Date());
-      switchDate(todayKey);
-    }
-
     // 手動修改文字日期
     function onDateTextManualChange(val) {
       const clean = val.replace(/\//g, '-').replace(/\(.*\)/, '').trim();
@@ -1393,10 +1535,106 @@
     }
 
     // ========================================================
+    // 📋 複製工作清單到其他日期功能 (Copy Sheet to Other Date)
+    // ========================================================
+    function openCopyDateModal() {
+      document.getElementById('copySourceDateText').textContent = formatDisplayDate(currentActiveDateKey);
+      
+      // 預設將目標日期設為明天
+      const parts = currentActiveDateKey.split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      d.setDate(d.getDate() + 1);
+      document.getElementById('targetCopyDatePicker').value = formatDateKey(d);
+
+      document.getElementById('copyDateModalOverlay').classList.add('show');
+    }
+
+    function closeCopyDateModal() {
+      document.getElementById('copyDateModalOverlay').classList.remove('show');
+    }
+
+    function closeCopyModalOnBg(e) {
+      if (e.target.id === 'copyDateModalOverlay') {
+        closeCopyDateModal();
+      }
+    }
+
+    // 快捷設定目標日期 (明天/後天)
+    function setQuickCopyTarget(offsetDays) {
+      const parts = currentActiveDateKey.split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      d.setDate(d.getDate() + offsetDays);
+      document.getElementById('targetCopyDatePicker').value = formatDateKey(d);
+    }
+
+    // 快捷設定下週一
+    function setQuickCopyTargetNextMonday() {
+      const parts = currentActiveDateKey.split('-');
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      const day = d.getDay();
+      const diff = (day === 0 ? 1 : 8 - day); // 天數差到下週一
+      d.setDate(d.getDate() + diff);
+      document.getElementById('targetCopyDatePicker').value = formatDateKey(d);
+    }
+
+    // 執行複製
+    function executeCopySheet() {
+      const targetDateKey = document.getElementById('targetCopyDatePicker').value;
+      if (!targetDateKey) {
+        alert('請選擇目標複製日期！');
+        return;
+      }
+
+      if (targetDateKey === currentActiveDateKey) {
+        alert('目標日期不能與目前的來源日期相同！');
+        return;
+      }
+
+      const resetChecks = document.getElementById('resetChecksOnCopy').checked;
+      const autoSwitch = document.getElementById('autoSwitchOnCopy').checked;
+
+      // 取得當前清單資料
+      const sourceData = getCurrentSheetData();
+      const db = getDatabase();
+
+      // 若目標日期已存在資料，提示確認
+      if (db[targetDateKey]) {
+        if (!confirm(`目標日期「${formatDisplayDate(targetDateKey)}」已有工作清單，確定要以目前的內容覆蓋嗎？`)) {
+          return;
+        }
+      }
+
+      // 深拷貝並建立目標日期資料
+      const targetData = JSON.parse(JSON.stringify(sourceData));
+      targetData.dateKey = targetDateKey;
+      targetData.displayDate = formatDisplayDate(targetDateKey);
+      targetData.updatedAt = Date.now();
+
+      if (resetChecks && Array.isArray(targetData.rows)) {
+        targetData.rows.forEach(r => {
+          r.box1 = false;
+          r.box2 = false;
+        });
+      }
+
+      // 儲存至資料庫
+      db[targetDateKey] = targetData;
+      saveDatabase(db);
+
+      closeCopyDateModal();
+
+      if (autoSwitch) {
+        switchDate(targetDateKey);
+        alert(`🎉 已成功複製工作清單並切換至：${formatDisplayDate(targetDateKey)}！`);
+      } else {
+        alert(`🎉 已成功將工作清單複製至：${formatDisplayDate(targetDateKey)}！`);
+      }
+    }
+
+    // ========================================================
     // 📅 視覺化日曆視窗渲染與操作 (Visual Calendar UI)
     // ========================================================
     function openCalendarModal() {
-      // 將日曆檢視月份設定為目前選定日期的月份
       if (currentActiveDateKey) {
         const parts = currentActiveDateKey.split('-');
         calViewYear = Number(parts[0]);
@@ -1652,7 +1890,6 @@
       const db = getDatabase();
       const lastKey = db['_last_date_key'];
       const todayKey = formatDateKey(new Date());
-      // 優先載入今天或上次開啟的日期
       switchDate(lastKey || todayKey);
     });
   </script>
